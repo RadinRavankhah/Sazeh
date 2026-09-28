@@ -487,12 +487,12 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 > **[DECISION NEEDED] D2.1 — Launch section list (the actual catalog).**
 > Proposed launch composites: HeroSection, FeatureGrid, PricingTable, FAQAccordion, TestimonialSection, CtaBanner, LogoWall, TextSection, ContactForm, NavBar, Footer, ImageGallery. Confirm / add / cut. This defines what BOTH the agent and the palette can build with at launch.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **9 composites + 6 primitives.** Composites: HeroSection, FeatureGrid, TextSection, CtaBanner, FAQAccordion, TestimonialSection, PricingTable, NavBar, Footer. Primitives: Section, Button, Heading, Text, Image, Divider. ContactForm, LogoWall, ImageGallery deferred (need media/forms infra, Phase 8).
 
 > **[DECISION NEEDED] D2.2 — Theme token granularity.**
 > How much can a user/agent restyle a site? (a) Minimal: accent color + font + radius (v1 config shape); (b) Extended: + section background variants, heading scale; (c) Full token sheet per site (approaching a mini design system editor). Affects `set_site_theme` tool + settings UI scope.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(b) Extended tokens.** `site.config.theme` = accent color, font family, radius, heading scale — plus section background variants (none/subtle/muted/dark) as a prop on section components. Validated shape lives in `apps/sites/theme.py`; set_site_theme (Phase 5) writes through it.
 
 ---
 
@@ -773,8 +773,8 @@ All `[DECISION NEEDED]` blocks, in one place. Fill in answers here or inline in 
 | D0.4 | 0 | Product name/domain | _(pending)_ |
 | D1.1 | 1 | Teams vs single-user workspaces | _(pending)_ |
 | D1.2 | 1 | Free-plan site/page limits | _(pending)_ |
-| D2.1 | 2 | Launch component catalog | _(pending)_ |
-| D2.2 | 2 | Theme token granularity | _(pending)_ |
+| D2.1 | 2 | Launch component catalog | **9 composites (Hero, FeatureGrid, Text, CtaBanner, FAQ, Testimonials, Pricing, NavBar, Footer) + 6 primitives (Section, Button, Heading, Text, Image, Divider)** |
+| D2.2 | 2 | Theme token granularity | **(b) Extended: accent/font/radius/heading-scale + section background variants** |
 | D3.1 | 3 | OAuth providers | **(a) Email/password only at launch** |
 | D3.2 | 3 | SPA auth: session vs JWT | **(c) Sessions now (HttpOnly cookies), JWT with the public API later** |
 | D4.1 | 4 | Inline text editing on canvas | _(pending)_ |

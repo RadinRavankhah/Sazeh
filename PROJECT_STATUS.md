@@ -78,20 +78,22 @@ Findings from the audit → what was done:
 
 | Phase | Status | Notes |
 |---|---|---|
-| 0 — Scaffolding | 🟢 ~90% | Missing: design-token sheet, `apps/web`, `packages/schema` |
+| 0 — Scaffolding | 🟢 ~90% | Missing: design-token sheet, `apps/web` |
 | 1 — Accounts & Data Layer | 🟢 done | Models, migrations, signals, tenancy, admin, tests |
-| 2 — Registry & Engine | 🟡 ~60% | Validator/patcher/seed done + tested; missing: shadcn-docs parser for primitives, more composites, `packages/schema` TS types, render harness |
+| 2 — Registry & Engine | 🟢 done (backend) | **Launch catalog (9 composites + 6 primitives, D2.1) seeded with example payloads; schemas Draft-07 with `additionalProperties: false`; `example_payload` field; theme tokens (D2.2, `apps/sites/theme.py`); `packages/schema` generates strict TS types from the catalog (47 tests green).** Remaining: React `ComponentRenderer` + render harness (Phase 2 tasks 5–6, frontend) |
 | 3 — Auth & Dashboard | 🔴 0% | Decided (D3.2): session cookies for the SPA. allauth is currently server-rendered only → needs SPA wiring (headless/custom views + CSRF endpoint) |
 | 4–10 | 🔴 0% | Editor, agent orchestrator/UX, publishing, media, billing, hardening |
 
 ### Decision log
-Decided on 2026-09-28: **D0.1 = chat-first** (Lovable model; chat screen is the default surface after "create site"), **D0.2 = OpenAI-compatible LLM endpoint** (env-configured base URL/key/model; user-selectable model catalog with per-model credit pricing folds into Phase 5/D9.2 — `LLM_BASE_URL` already added to settings), **D3.1 = email/password only at launch**, **D3.2 = session cookies now, JWT with the public API later**. The remaining 24 decisions (`D0.3`–`D10.2`) are still pending per §14 of the plan. Next gating decisions: **D2.1** (launch component catalog) and **D2.2** (theme token granularity) for the Phase 2 remainder; **D5.1–D5.4** before the orchestrator.
+Decided on 2026-09-28: **D0.1 = chat-first** (Lovable model), **D0.2 = OpenAI-compatible LLM endpoint** (env-configured; user-selectable model catalog with per-model credit pricing folds into Phase 5/D9.2), **D3.1 = email/password only**, **D3.2 = session cookies now, JWT with the public API later**, **D2.1 = 9 composites + 6 primitives** (ContactForm/LogoWall/ImageGallery deferred to Phase 8), **D2.2 = extended theme tokens** (accent/font/radius/heading-scale + section background variants). Remaining pending: `D0.3`, `D0.4`, `D1.1`, `D1.2`, `D4.1`–`D4.3`, `D5.1`–`D5.4`, `D6.1`, `D6.2`, `D7.1`–`D7.3`, `D8.1`, `D8.2`, `D9.1`, `D9.2`, `D10.1`, `D10.2`. Next gating: none — Phase 3 frontend work can start; **D5.1–D5.4** needed before the orchestrator.
+
+### Note on the registry seed source
+The plan's "parse `/shadcn/*.md` into schemas" pipeline was realized as **hand-curated JSON files in `apps/registry/components/`** (informed by the vendored shadcn docs — e.g. Button's variant/size enums) loaded by the repeatable `seed_components` command. The curated-JSON approach is more robust than parsing markdown for the 15-component launch catalog; the shadcn docs remain the reference for mapping components.
 
 ---
 
 ## 5. Next Steps (recommended order)
 
-1. Answer **D2.1 / D2.2** (needed to finish Phase 2) and later **D5.1–D5.4** before the orchestrator.
-2. Phase 2 remainder: extend `seed_components` to parse `/shadcn/*.md` primitives; hand-curate the launch composite set (D2.1); start `packages/schema`.
-3. Scaffold `apps/web` (Vite + React 18 + TS strict + Tailwind v4 + shadcn init) and the design-token sheet (Phase 0 leftover). Chat-first (D0.1) makes the generate/chat screen the first UI target after auth (D3.2: session cookies).
-4. Then proceed per plan phases 3→5.
+1. Scaffold `apps/web` (Vite + React 18 + TS strict + Tailwind v4 + shadcn init) and the design-token sheet (Phase 0 leftover) — chat-first (D0.1) makes the auth screens + generate/chat view the first UI targets; session-cookie auth wiring (D3.2) lands with it.
+2. Phase 2 tasks 5–6 (frontend): `ComponentRenderer`/`PageRenderer` + render harness consuming `@sazeh/schema`'s `CATALOG`.
+3. Phase 5 planning: answer **D5.1–D5.4**, then the LLM adapter (OpenAI-compatible per D0.2) + orchestrator loop.
