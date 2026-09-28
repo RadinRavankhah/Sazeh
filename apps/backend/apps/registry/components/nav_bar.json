@@ -1,0 +1,48 @@
+{
+  "name": "NavBar",
+  "display_name": "Navigation Bar",
+  "category": "composite",
+  "description": "A site header with logo text, navigation links, and an optional call-to-action button.",
+  "icon": "panel-top",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "NavBar",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["logo_text", "links"],
+    "properties": {
+      "logo_text": { "type": "string", "maxLength": 40 },
+      "links": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 7,
+        "items": {
+          "type": "object",
+          "required": ["label", "href"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "maxLength": 40 },
+            "href": { "type": "string", "format": "uri-reference" }
+          }
+        }
+      },
+      "cta_text": { "type": "string", "maxLength": 40 },
+      "cta_href": { "type": "string", "format": "uri-reference" }
+    }
+  },
+  "default_props": {
+    "logo_text": "My Site",
+    "links": [{ "label": "Home", "href": "/" }]
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "logo_text": "Acme",
+    "links": [
+      { "label": "Features", "href": "/#features" },
+      { "label": "Pricing", "href": "/pricing" },
+      { "label": "About", "href": "/about" }
+    ],
+    "cta_text": "Sign up",
+    "cta_href": "/signup"
+  }
+}

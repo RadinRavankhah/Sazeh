@@ -2,22 +2,31 @@
   "name": "Section",
   "display_name": "Section",
   "category": "primitive",
-  "description": "A generic container section with optional heading and background.",
+  "description": "A generic container section with optional heading and background. The root building block of every page tree.",
   "icon": "layout-section",
   "schema": {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Section",
     "type": "object",
+    "additionalProperties": false,
     "properties": {
-      "heading": { "type": "string" },
-      "background_color": { "type": "string" },
-      "padding": { "type": "string", "enum": ["none", "sm", "md", "lg", "xl"] },
-      "container_width": { "type": "string", "enum": ["full", "contained", "narrow"] }
-    },
-    "required": []
+      "heading": { "type": "string", "maxLength": 120 },
+      "background_color": { "type": "string", "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$" },
+      "background": { "type": "string", "enum": ["none", "subtle", "muted", "dark"], "default": "none" },
+      "padding": { "type": "string", "enum": ["none", "sm", "md", "lg", "xl"], "default": "md" },
+      "container_width": { "type": "string", "enum": ["full", "contained", "narrow"], "default": "contained" }
+    }
   },
   "default_props": {
     "padding": "md",
-    "container_width": "contained"
+    "container_width": "contained",
+    "background": "none"
   },
-  "allowed_children": ["*"]
+  "allowed_children": ["*"],
+  "example_payload": {
+    "heading": "Why choose us",
+    "background": "subtle",
+    "padding": "lg",
+    "container_width": "contained"
+  }
 }

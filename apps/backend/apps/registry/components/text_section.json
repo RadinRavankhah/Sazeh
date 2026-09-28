@@ -1,0 +1,33 @@
+{
+  "name": "TextSection",
+  "display_name": "Text Section",
+  "category": "composite",
+  "description": "A simple prose section with a title and body text — for stories, about pages, and announcements.",
+  "icon": "align-left",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "TextSection",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["title", "body"],
+    "properties": {
+      "title": { "type": "string", "maxLength": 120 },
+      "body": { "type": "string", "maxLength": 2000 },
+      "align": { "type": "string", "enum": ["left", "center"], "default": "left" },
+      "background": { "type": "string", "enum": ["none", "subtle", "muted", "dark"], "default": "none" }
+    }
+  },
+  "default_props": {
+    "title": "About",
+    "body": "",
+    "align": "left",
+    "background": "none"
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "title": "Our story",
+    "body": "We started Sazeh because building a website shouldn't require a developer. Today, thousands of founders launch their idea with us — no code, no templates that all look the same.",
+    "align": "left",
+    "background": "none"
+  }
+}

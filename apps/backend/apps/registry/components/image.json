@@ -1,0 +1,37 @@
+{
+  "name": "Image",
+  "display_name": "Image",
+  "category": "primitive",
+  "description": "An image with alt text and optional dimensions (captured for layout stability).",
+  "icon": "image",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Image",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["src", "alt"],
+    "properties": {
+      "src": { "type": "string", "format": "uri" },
+      "alt": { "type": "string", "minLength": 1, "maxLength": 150 },
+      "width": { "type": "integer", "minimum": 1 },
+      "height": { "type": "integer", "minimum": 1 },
+      "caption": { "type": "string", "maxLength": 200 },
+      "rounded": { "type": "boolean", "default": true }
+    }
+  },
+  "default_props": {
+    "src": "https://picsum.photos/seed/sazeh-placeholder/1200/630",
+    "alt": "Placeholder image",
+    "width": 1200,
+    "height": 630,
+    "rounded": true
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "src": "https://picsum.photos/seed/sazeh-demo/1200/630",
+    "alt": "Product screenshot",
+    "width": 1200,
+    "height": 630,
+    "rounded": true
+  }
+}

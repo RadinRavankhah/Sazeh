@@ -2,19 +2,21 @@
   "name": "Button",
   "display_name": "Button",
   "category": "primitive",
-  "description": "A clickable button with configurable label, variant, and URL.",
-  "icon": "button",
+  "description": "A clickable button with configurable label, variant, and URL. Maps to shadcn/ui Button.",
+  "icon": "square-mouse-pointer",
   "schema": {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Button",
     "type": "object",
+    "additionalProperties": false,
+    "required": ["label"],
     "properties": {
-      "label": { "type": "string", "minLength": 1 },
-      "url": { "type": "string", "format": "uri" },
-      "variant": { "type": "string", "enum": ["default", "primary", "secondary", "outline", "ghost"] },
-      "size": { "type": "string", "enum": ["sm", "md", "lg"] },
-      "open_in_new_tab": { "type": "boolean" }
-    },
-    "required": ["label"]
+      "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+      "url": { "type": "string", "format": "uri-reference" },
+      "variant": { "type": "string", "enum": ["default", "primary", "secondary", "outline", "ghost"], "default": "primary" },
+      "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" },
+      "open_in_new_tab": { "type": "boolean", "default": false }
+    }
   },
   "default_props": {
     "label": "Click Me",
@@ -22,5 +24,12 @@
     "size": "md",
     "open_in_new_tab": false
   },
-  "allowed_children": []
+  "allowed_children": [],
+  "example_payload": {
+    "label": "Get started",
+    "url": "/signup",
+    "variant": "primary",
+    "size": "lg",
+    "open_in_new_tab": false
+  }
 }

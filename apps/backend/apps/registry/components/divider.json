@@ -1,0 +1,26 @@
+{
+  "name": "Divider",
+  "display_name": "Divider",
+  "category": "primitive",
+  "description": "A horizontal or vertical separator line. Maps to shadcn/ui Separator.",
+  "icon": "minus",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Divider",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "orientation": { "type": "string", "enum": ["horizontal", "vertical"], "default": "horizontal" },
+      "spacing": { "type": "string", "enum": ["none", "sm", "md", "lg"], "default": "md" }
+    }
+  },
+  "default_props": {
+    "orientation": "horizontal",
+    "spacing": "md"
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "orientation": "horizontal",
+    "spacing": "lg"
+  }
+}

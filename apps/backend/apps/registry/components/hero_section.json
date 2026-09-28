@@ -2,27 +2,43 @@
   "name": "HeroSection",
   "display_name": "Hero Section",
   "category": "composite",
-  "description": "A full-width hero banner with headline, subtext, CTA buttons, and optional background image.",
+  "description": "A full-width hero banner with headline, subheadline, CTA buttons, and optional image. The canonical first section of a landing page.",
   "icon": "layout-hero",
   "schema": {
-    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "HeroSection",
     "type": "object",
+    "additionalProperties": false,
+    "required": ["headline", "cta_text", "cta_href"],
     "properties": {
-      "headline": { "type": "string", "minLength": 1 },
-      "subtext": { "type": "string" },
-      "cta_primary_label": { "type": "string" },
-      "cta_primary_url": { "type": "string", "format": "uri" },
-      "cta_secondary_label": { "type": "string" },
-      "cta_secondary_url": { "type": "string", "format": "uri" },
-      "background_image": { "type": "string" },
-      "alignment": { "type": "string", "enum": ["left", "center", "right"] }
-    },
-    "required": ["headline"]
+      "headline": { "type": "string", "maxLength": 120 },
+      "subheadline": { "type": "string", "maxLength": 300 },
+      "badge_text": { "type": "string", "maxLength": 40 },
+      "cta_text": { "type": "string", "maxLength": 40 },
+      "cta_href": { "type": "string", "format": "uri-reference" },
+      "secondary_cta_text": { "type": "string", "maxLength": 40 },
+      "secondary_cta_href": { "type": "string", "format": "uri-reference" },
+      "image_url": { "type": "string", "format": "uri" },
+      "image_alt": { "type": "string", "maxLength": 100 },
+      "align": { "type": "string", "enum": ["center", "left"], "default": "center" }
+    }
   },
   "default_props": {
     "headline": "Welcome to Your Site",
-    "subtext": "",
-    "alignment": "center"
+    "subheadline": "",
+    "cta_text": "Get started",
+    "cta_href": "#",
+    "align": "center"
   },
-  "allowed_children": []
+  "allowed_children": [],
+  "example_payload": {
+    "headline": "Build your website in minutes",
+    "subheadline": "Describe what you need or drag and drop — Sazeh builds it with you.",
+    "badge_text": "New",
+    "cta_text": "Start building",
+    "cta_href": "/signup",
+    "secondary_cta_text": "See templates",
+    "secondary_cta_href": "/templates",
+    "align": "center"
+  }
 }

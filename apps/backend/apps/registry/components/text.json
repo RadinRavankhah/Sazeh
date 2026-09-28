@@ -1,0 +1,30 @@
+{
+  "name": "Text",
+  "display_name": "Text",
+  "category": "primitive",
+  "description": "A standalone paragraph of body text with configurable size and alignment.",
+  "icon": "type",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Text",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["content"],
+    "properties": {
+      "content": { "type": "string", "minLength": 1, "maxLength": 1000 },
+      "size": { "type": "string", "enum": ["sm", "md", "lg"], "default": "md" },
+      "align": { "type": "string", "enum": ["left", "center", "right"], "default": "left" }
+    }
+  },
+  "default_props": {
+    "content": "Body text",
+    "size": "md",
+    "align": "left"
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "content": "Sazeh is the fastest way for founders to go from idea to a live website.",
+    "size": "lg",
+    "align": "center"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "name": "Footer",
+  "display_name": "Footer",
+  "category": "composite",
+  "description": "A site footer with tagline, link columns, and a copyright line.",
+  "icon": "panel-bottom",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Footer",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["copyright"],
+    "properties": {
+      "tagline": { "type": "string", "maxLength": 200 },
+      "columns": {
+        "type": "array",
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "required": ["title", "links"],
+          "additionalProperties": false,
+          "properties": {
+            "title": { "type": "string", "maxLength": 40 },
+            "links": {
+              "type": "array",
+              "maxItems": 6,
+              "items": {
+                "type": "object",
+                "required": ["label", "href"],
+                "additionalProperties": false,
+                "properties": {
+                  "label": { "type": "string", "maxLength": 40 },
+                  "href": { "type": "string", "format": "uri-reference" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "copyright": { "type": "string", "maxLength": 120 }
+    }
+  },
+  "default_props": {
+    "copyright": "© 2026 My Site. All rights reserved.",
+    "columns": []
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "tagline": "The fastest way from idea to live website.",
+    "columns": [
+      {
+        "title": "Product",
+        "links": [
+          { "label": "Features", "href": "/#features" },
+          { "label": "Pricing", "href": "/pricing" }
+        ]
+      },
+      {
+        "title": "Company",
+        "links": [
+          { "label": "About", "href": "/about" },
+          { "label": "Contact", "href": "/contact" }
+        ]
+      }
+    ],
+    "copyright": "© 2026 Acme Inc. All rights reserved."
+  }
+}

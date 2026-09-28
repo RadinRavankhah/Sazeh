@@ -1,0 +1,80 @@
+{
+  "name": "PricingTable",
+  "display_name": "Pricing Table",
+  "category": "composite",
+  "description": "A pricing section with up to 4 plans, feature lists, and per-plan CTAs. One plan can be highlighted.",
+  "icon": "credit-card",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "PricingTable",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["plans"],
+    "properties": {
+      "title": { "type": "string", "maxLength": 100 },
+      "subtitle": { "type": "string", "maxLength": 200 },
+      "plans": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "required": ["name", "price", "billing_period", "cta_text", "cta_href", "features"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "maxLength": 50 },
+            "description": { "type": "string", "maxLength": 150 },
+            "price": { "type": "string", "maxLength": 20 },
+            "billing_period": { "type": "string", "enum": ["month", "year", "one-time"] },
+            "highlighted": { "type": "boolean", "default": false },
+            "cta_text": { "type": "string", "maxLength": 40 },
+            "cta_href": { "type": "string", "format": "uri-reference" },
+            "features": {
+              "type": "array",
+              "items": { "type": "string", "maxLength": 100 }
+            }
+          }
+        }
+      }
+    }
+  },
+  "default_props": {
+    "title": "Pricing",
+    "plans": [
+      {
+        "name": "Starter",
+        "price": "$0",
+        "billing_period": "month",
+        "cta_text": "Get started",
+        "cta_href": "/signup",
+        "features": ["Feature one", "Feature two"]
+      }
+    ]
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "title": "Simple pricing",
+    "subtitle": "Start free, upgrade when you outgrow it.",
+    "plans": [
+      {
+        "name": "Free",
+        "description": "For trying things out",
+        "price": "$0",
+        "billing_period": "month",
+        "cta_text": "Start free",
+        "cta_href": "/signup",
+        "features": ["1 site", "50 AI credits/month", "Sazeh subdomain"]
+      },
+      {
+        "name": "Pro",
+        "description": "For serious builders",
+        "price": "$20",
+        "billing_period": "month",
+        "highlighted": true,
+        "cta_text": "Go Pro",
+        "cta_href": "/signup?plan=pro",
+        "features": ["10 sites", "1000 AI credits/month", "GitHub publishing"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "CtaBanner",
+  "display_name": "CTA Banner",
+  "category": "composite",
+  "description": "A call-to-action banner with headline, supporting text, and one primary button.",
+  "icon": "megaphone",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "CtaBanner",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["headline", "cta_text", "cta_href"],
+    "properties": {
+      "headline": { "type": "string", "maxLength": 120 },
+      "body": { "type": "string", "maxLength": 300 },
+      "cta_text": { "type": "string", "maxLength": 40 },
+      "cta_href": { "type": "string", "format": "uri-reference" },
+      "background": { "type": "string", "enum": ["accent", "dark", "subtle"], "default": "accent" }
+    }
+  },
+  "default_props": {
+    "headline": "Ready to start?",
+    "cta_text": "Get started",
+    "cta_href": "/signup",
+    "background": "accent"
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "headline": "Your site is five minutes away",
+    "body": "Describe it once — publish it everywhere.",
+    "cta_text": "Start building free",
+    "cta_href": "/signup",
+    "background": "accent"
+  }
+}

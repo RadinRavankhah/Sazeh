@@ -1,0 +1,60 @@
+{
+  "name": "TestimonialSection",
+  "display_name": "Testimonials",
+  "category": "composite",
+  "description": "A titled grid of customer quotes with attribution (name, role, company, optional avatar).",
+  "icon": "quote",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "TestimonialSection",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["testimonials"],
+    "properties": {
+      "title": { "type": "string", "maxLength": 100 },
+      "columns": { "type": "integer", "enum": [1, 2, 3], "default": 3 },
+      "testimonials": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 9,
+        "items": {
+          "type": "object",
+          "required": ["quote", "author_name"],
+          "additionalProperties": false,
+          "properties": {
+            "quote": { "type": "string", "maxLength": 300 },
+            "author_name": { "type": "string", "maxLength": 80 },
+            "author_role": { "type": "string", "maxLength": 80 },
+            "author_company": { "type": "string", "maxLength": 80 },
+            "avatar_url": { "type": "string", "format": "uri" }
+          }
+        }
+      }
+    }
+  },
+  "default_props": {
+    "columns": 3,
+    "testimonials": [
+      { "quote": "A great experience from start to finish.", "author_name": "Happy Customer" }
+    ]
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "title": "Loved by founders",
+    "columns": 2,
+    "testimonials": [
+      {
+        "quote": "I described my coffee shop in one paragraph and had a site I was proud to share the same morning.",
+        "author_name": "Dana K.",
+        "author_role": "Owner",
+        "author_company": "Roast & Co"
+      },
+      {
+        "quote": "The drag-and-drop editor is what sold me — the agent drafts, I fine-tune, no code anywhere.",
+        "author_name": "Miguel R.",
+        "author_role": "Founder",
+        "author_company": "Brightbyte"
+      }
+    ]
+  }
+}

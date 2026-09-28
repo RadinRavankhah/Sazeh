@@ -1,0 +1,30 @@
+{
+  "name": "Heading",
+  "display_name": "Heading",
+  "category": "primitive",
+  "description": "A standalone heading element with configurable level and alignment.",
+  "icon": "heading",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Heading",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["text"],
+    "properties": {
+      "text": { "type": "string", "minLength": 1, "maxLength": 200 },
+      "level": { "type": "string", "enum": ["h1", "h2", "h3", "h4", "h5", "h6"], "default": "h2" },
+      "align": { "type": "string", "enum": ["left", "center", "right"], "default": "left" }
+    }
+  },
+  "default_props": {
+    "text": "Heading",
+    "level": "h2",
+    "align": "left"
+  },
+  "allowed_children": [],
+  "example_payload": {
+    "text": "Everything you need to ship",
+    "level": "h2",
+    "align": "center"
+  }
+}
