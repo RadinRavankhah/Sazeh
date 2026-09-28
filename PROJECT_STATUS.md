@@ -81,17 +81,17 @@ Findings from the audit → what was done:
 | 0 — Scaffolding | 🟢 ~90% | Missing: design-token sheet, `apps/web`, `packages/schema` |
 | 1 — Accounts & Data Layer | 🟢 done | Models, migrations, signals, tenancy, admin, tests |
 | 2 — Registry & Engine | 🟡 ~60% | Validator/patcher/seed done + tested; missing: shadcn-docs parser for primitives, more composites, `packages/schema` TS types, render harness |
-| 3 — Auth & Dashboard | 🔴 0% | Blocked on pending **D3.2** (session vs JWT); allauth currently server-rendered only |
+| 3 — Auth & Dashboard | 🔴 0% | Decided (D3.2): session cookies for the SPA. allauth is currently server-rendered only → needs SPA wiring (headless/custom views + CSRF endpoint) |
 | 4–10 | 🔴 0% | Editor, agent orchestrator/UX, publishing, media, billing, hardening |
 
 ### Decision log
-All 28 decisions (`D0.1`–`D10.2`) remain **pending**. Next phase work needs at minimum: **D0.1** (chat-first vs editor-first), **D0.2** (LLM provider), **D3.2** (SPA auth).
+Decided on 2026-09-28: **D0.1 = chat-first** (Lovable model; chat screen is the default surface after "create site"), **D0.2 = OpenAI-compatible LLM endpoint** (env-configured base URL/key/model; user-selectable model catalog with per-model credit pricing folds into Phase 5/D9.2 — `LLM_BASE_URL` already added to settings), **D3.1 = email/password only at launch**, **D3.2 = session cookies now, JWT with the public API later**. The remaining 24 decisions (`D0.3`–`D10.2`) are still pending per §14 of the plan. Next gating decisions: **D2.1** (launch component catalog) and **D2.2** (theme token granularity) for the Phase 2 remainder; **D5.1–D5.4** before the orchestrator.
 
 ---
 
 ## 5. Next Steps (recommended order)
 
-1. Answer D0.1 / D0.2 / D3.2 in `sazeh-dev-plan-v2.md` §14.
+1. Answer **D2.1 / D2.2** (needed to finish Phase 2) and later **D5.1–D5.4** before the orchestrator.
 2. Phase 2 remainder: extend `seed_components` to parse `/shadcn/*.md` primitives; hand-curate the launch composite set (D2.1); start `packages/schema`.
-3. Scaffold `apps/web` (Vite + React 18 + TS strict + Tailwind v4 + shadcn init) and the design-token sheet (Phase 0 leftover).
+3. Scaffold `apps/web` (Vite + React 18 + TS strict + Tailwind v4 + shadcn init) and the design-token sheet (Phase 0 leftover). Chat-first (D0.1) makes the generate/chat screen the first UI target after auth (D3.2: session cookies).
 4. Then proceed per plan phases 3→5.

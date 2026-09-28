@@ -416,7 +416,7 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 > (b) Editor-first — drag-and-drop is the product, chat is an assistant panel (WordPress+AI model)
 > (c) Both at once — generate + edit in one canvas from day one (most work)
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(a) Chat-first** — agent builds the first draft, editor is for refinement (Lovable model). After "create site", the default surface is the generate/chat screen; Phase 6 (chat in editor) is prioritized alongside Phase 5, Phase 4's editor follows.
 
 > **[DECISION NEEDED] D0.2 — LLM provider strategy at launch.**
 > (a) Anthropic Claude only — strongest tool-calling, fastest to build
@@ -424,7 +424,7 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 > (c) Provider-agnostic adapter from day one (Anthropic + OpenAI), slight build-time cost
 > Affects SDK choice, prompt format, and streaming implementation in Phase 5.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **OpenAI-compatible endpoint, platform-configured** — we set our own base URL, API key, and model name via environment (`LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`), so any OpenAI-compatible gateway (OpenAI, Azure, OpenRouter, self-hosted vLLM) works behind one adapter. The adapter only needs to speak the OpenAI wire format (chat completions + tool calling + streaming). Roadmap (Phase 5 adapter design + Phase 9 pricing, folds into D9.2): expose a **model catalog** so users can pick which model powers their Sazeh agent, with per-model credit pricing — usage metered per selected model via `UsageEvent`.
 
 > **[DECISION NEEDED] D0.3 — Deployment target confirmation.**
 > V1 locked Fly.io. Confirm, or pick Railway/Render (managed Postgres/Redis can save setup time pre-PMF).
@@ -514,13 +514,13 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 > **[DECISION NEEDED] D3.1 — OAuth providers.**
 > (a) Email/password only at launch; (b) + GitHub; (c) + Google; (d) both.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(a) Email/password only at launch.** OAuth may be added later; not an MVP concern.
 
 > **[DECISION NEEDED] D3.2 — SPA auth mechanism.**
 > V1 locked SimpleJWT. For a same-domain Vite SPA, HttpOnly session cookies are simpler and CSRF-manageable; JWT helps if a future public API is planned (backlog §15).
 > (a) Session cookies (recommended for MVP) (b) JWT per v1 (c) Sessions now, add JWT with the public API later.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(c) Sessions now, JWT later.** MVP SPA uses HttpOnly session cookies (simplest and the more secure choice for a browser-only SPA: no token in JS-reachable storage; CSRF via SameSite + Django middleware). JWT arrives with the public API (§15), where its stateless/flexible properties actually pay off. Phase 3 wires allauth for the SPA with session cookies.
 
 ---
 
@@ -767,16 +767,16 @@ All `[DECISION NEEDED]` blocks, in one place. Fill in answers here or inline in 
 
 | ID | Phase | Topic | Answer |
 |---|---|---|---|
-| D0.1 | 0 | Chat-first vs editor-first UX | _(pending)_ |
-| D0.2 | 0 | LLM provider strategy | _(pending)_ |
+| D0.1 | 0 | Chat-first vs editor-first UX | **(a) Chat-first (Lovable model)** |
+| D0.2 | 0 | LLM provider strategy | **OpenAI-compatible endpoint (env-configured base URL/key/model); user-selectable model catalog with per-model credit pricing later (folds into D9.2)** |
 | D0.3 | 0 | Deployment target | _(pending)_ |
 | D0.4 | 0 | Product name/domain | _(pending)_ |
 | D1.1 | 1 | Teams vs single-user workspaces | _(pending)_ |
 | D1.2 | 1 | Free-plan site/page limits | _(pending)_ |
 | D2.1 | 2 | Launch component catalog | _(pending)_ |
 | D2.2 | 2 | Theme token granularity | _(pending)_ |
-| D3.1 | 3 | OAuth providers | _(pending)_ |
-| D3.2 | 3 | SPA auth: session vs JWT | _(pending)_ |
+| D3.1 | 3 | OAuth providers | **(a) Email/password only at launch** |
+| D3.2 | 3 | SPA auth: session vs JWT | **(c) Sessions now (HttpOnly cookies), JWT with the public API later** |
 | D4.1 | 4 | Inline text editing on canvas | _(pending)_ |
 | D4.2 | 4 | Breakpoint preview scope | _(pending)_ |
 | D4.3 | 4 | Primary editor user | _(pending)_ |
