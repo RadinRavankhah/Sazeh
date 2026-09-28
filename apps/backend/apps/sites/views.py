@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from apps.workspaces.permissions import IsWorkspaceEditorOrAbove
 from apps.workspaces.scoping import WorkspaceScopedMixin
+from apps.workspaces.services import ensure_default_workspace
 
 from .models import Page, Site
 from .serializers import (
@@ -39,13 +40,17 @@ class SiteViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
         ).distinct()
 
     def perform_create(self, serializer):
-        # Target workspace comes from the request body (it is the parent being
-        # created into), but is resolved against the requester's *writable*
-        # workspaces — a non-member gets a 404, never access.
-        workspace = get_object_or_404(
-            self.get_writable_workspaces(),
-            pk=self.request.data.get("workspace"),
-        )
+        # Target workspace: an optional body hint, resolved against the
+        # requester's *writable* workspaces (a non-member gets a 404, never
+        # access); when omitted, the user's personal workspace (created on
+        # the fly if missing).
+        workspace_hint = self.request.data.get("workspace")
+        if workspace_hint:
+            workspace = get_object_or_404(
+                self.get_writable_workspaces(), pk=workspace_hint
+            )
+        else:
+            workspace = ensure_default_workspace(self.request.user)
         site = serializer.save(workspace=workspace)
         # Create a default empty page tree when creating a site
         Page.objects.create(
