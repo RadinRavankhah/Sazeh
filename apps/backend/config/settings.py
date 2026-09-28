@@ -33,10 +33,12 @@ class _Settings(BaseSettings):
     AWS_STORAGE_BUCKET_NAME: str = "sazeh-media"
     AWS_S3_REGION_NAME: str = "us-east-1"
 
-    # LLM
-    LLM_PROVIDER: str = "anthropic"
+    # LLM (OpenAI-compatible: base URL, key, and model are env-configured;
+    # see decision D0.2 in sazeh-dev-plan-v2.md)
+    LLM_PROVIDER: str = "openai"
+    LLM_BASE_URL: str = ""  # e.g. https://api.openai.com/v1 or a custom gateway
     LLM_API_KEY: str = ""
-    LLM_MODEL: str = "claude-sonnet-4-20250514"
+    LLM_MODEL: str = "gpt-4o-mini"
 
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"
@@ -195,6 +197,7 @@ CELERY_TIMEZONE = "UTC"
 
 # LLM
 LLM_PROVIDER = _env.LLM_PROVIDER
+LLM_BASE_URL = _env.LLM_BASE_URL
 LLM_API_KEY = _env.LLM_API_KEY
 LLM_MODEL = _env.LLM_MODEL
 
