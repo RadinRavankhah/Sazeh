@@ -85,8 +85,8 @@ Findings from the audit → what was done:
 |---|---|---|
 | 0 — Scaffolding | 🟢 done | `apps/web` scaffolded (Vite + React 18.3 + TS 6 strict + Tailwind v4 via Vite plugin + shadcn base-nova); design-token sheet delivered (`apps/web/DESIGN_TOKENS.md` + themed `index.css`); `@sazeh/schema` consumed via path alias |
 | 1 — Accounts & Data Layer | 🟢 done | Models, migrations, signals, tenancy, admin, tests |
-| 2 — Registry & Engine | 🟢 done (backend) | **Launch catalog (9 composites + 6 primitives, D2.1) seeded with example payloads; schemas Draft-07 with `additionalProperties: false`; `example_payload` field; theme tokens (D2.2, `apps/sites/theme.py`); `packages/schema` generates strict TS types from the catalog (47 tests green).** Remaining: React `ComponentRenderer` + render harness (Phase 2 tasks 5–6, frontend) |
-| 3 — Auth & Dashboard | 🟠 ~50% | **Pass 1 done:** allauth headless (`/_allauth/browser/v1/*`) behind session cookies (D3.2, D3.1 email/password only — email verification deferred, `ACCOUNT_EMAIL_VERIFICATION=none`); `/api/v1/me/` returns `default_workspace`; SPA login/signup/logout with React Hook Form + Zod; working route guards + auth store. **Pass 2 next:** sites grid, create-site flow, theme settings, generate stub |
+| 2 — Registry & Engine | 🟢 done | Launch catalog (9 composites + 6 primitives, D2.1) seeded with example payloads; schemas Draft-07 with `additionalProperties: false`; `example_payload` field; theme tokens (D2.2, `apps/sites/theme.py`); `packages/schema` strict TS types; **React `ComponentRenderer`/`PageRenderer` + `COMPONENT_MAP` (all 15 components) + read-only preview harness** (Phase 2 tasks 5–6). Generator bug fixed: array-of-objects props now emit as arrays |
+| 3 — Auth & Dashboard | 🟢 ~90% | **Pass 1 done:** allauth headless (`/_allauth/browser/v1/*`) behind session cookies (D3.2, D3.1 email/password only — email verification deferred, `ACCOUNT_EMAIL_VERIFICATION=none`); `/api/v1/me/` returns `default_workspace`; SPA login/signup/logout with React Hook Form + Zod; route guards + auth store. **Pass 2 done:** sites grid (create/rename/delete, live slug, empty states), post-create redirect → `/sites/:id/generate` (D0.1) with honest "agent arrives in Phase 5" stub + example-page seeder, theme token editor (first D2.2 consumer, Zod mirroring `theme.py`, server-side backstop in `SiteSerializer`), full-bleed draft preview with scoped site-theme CSS vars. **Remaining:** password-reset flow, dashboard polish |
 | 4–10 | 🔴 0% | Editor, agent orchestrator/UX, publishing, media, billing, hardening |
 
 ### Decision log
@@ -99,6 +99,16 @@ The plan's "parse `/shadcn/*.md` into schemas" pipeline was realized as **hand-c
 
 ## 5. Next Steps (recommended order)
 
-1. **Pass 2 — dashboard shell:** real sites grid (replaces the placeholder), create-site flow → chat-first redirect (`/sites/:id/generate`, D0.1), theme token editor (first D2.2 consumer, Zod mirroring `theme.py`), generate screen stub with honest "agent arrives in Phase 5" notice.
-2. Phase 2 tasks 5–6 (frontend): `ComponentRenderer`/`PageRenderer` + render harness consuming `@sazeh/schema`'s `CATALOG` — feeds the Pass 2 generate screen and later the editor canvas.
-3. Phase 5 planning: answer **D5.1–D5.4**, then the LLM adapter (OpenAI-compatible per D0.2) + orchestrator loop; the generate screen goes live when this lands.
+1. **Answer D5.1–D5.4** (streaming transport, model exposure, session/autonomy model) — gates the orchestrator; then Phase 5 backend (LLM adapter per D0.2, AgentSession/ToolRun models, tool loop) makes the generate screen live.
+2. **Phase 4 decisions D4.1–D4.3** (inline editing, breakpoints, editor user) — then the three-panel visual editor reuses the Pass 2 `ComponentRenderer`/`COMPONENT_MAP` on the canvas.
+3. **Phase 3 remainder:** password-reset flow + dashboard polish (can slot in any time).
+
+---
+
+## 6. Pass 2 implementation notes (2026-09-29)
+
+- **Default workspace:** `workspaces/services.py::ensure_default_workspace(user)` is the idempotent guarantee (signal covers new users; superusers/fixtures created before the signal get one on demand). `SiteViewSet.perform_create` falls back to it when the body omits `workspace`; an explicit workspace hint is still accepted but always resolved against *writable* workspaces (foreign id → 404). `workspace` is now a read-only serializer field.
+- **Theme backstop:** `SiteSerializer.validate_config` runs `validate_theme` on `config["theme"]` — invalid sheets are rejected 400 with field-level errors.
+- **Generator fix:** `packages/schema/scripts/generate.mjs` emitted array-of-objects props (`items`, `plans`, `testimonials`, `links`) as single objects — now `({...})[]`; catalog regenerated.
+- **Render engine:** `apps/web/src/render/` — `COMPONENT_MAP` (15/15 launch components on shadcn primitives), recursive `ComponentRenderer` with unknown-component fallback, `SiteThemeStyle` scoping `--primary`/`--ring`/`--radius`/font from `site.config.theme` (satoshi falls back to system until bundled — Fontshare-licensed).
+- **Preview is read-only by design** (chat-first D0.1; interactive surface is Phase 4's editor). The generate stub's "Preview an example page" seeds 7 example sections through the real `tree/patch` API — exercises the engine + client-side `TreePatchOp` end to end.
