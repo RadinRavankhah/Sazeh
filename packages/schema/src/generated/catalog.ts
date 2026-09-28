@@ -38,12 +38,12 @@ export interface FAQAccordionProps {
   title?: string; // @default "Frequently Asked Questions"
   /** max 250 chars */
   subtitle?: string;
-  items: {
+  items: ({
   /** max 150 chars */
   question: string;
   /** max 600 chars */
   answer: string;
-  };
+  })[];
 }
 
 /** A titled grid of feature cards (icon, title, description) in 2, 3, or 4 columns. */
@@ -53,29 +53,29 @@ export interface FeatureGridProps {
   /** max 250 chars */
   subtitle?: string;
   columns?: 2 | 3 | 4; // @default 3
-  features: {
+  features: ({
   /** max 60 chars */
   title: string;
   /** max 200 chars */
   description: string;
   icon: "zap" | "shield" | "layers" | "cpu" | "globe" | "lock" | "refresh" | "check-circle" | "star" | "code";
-  };
+  })[];
 }
 
 /** A site footer with tagline, link columns, and a copyright line. */
 export interface FooterProps {
   /** max 200 chars */
   tagline?: string;
-  columns?: {
+  columns?: ({
   /** max 40 chars */
   title: string;
-  links: {
+  links: ({
   /** max 40 chars */
   label: string;
   /** format: uri-reference */
   href: string;
-      };
-  };
+      })[];
+  })[];
   /** max 120 chars */
   copyright: string;
 }
@@ -128,12 +128,12 @@ export interface ImageProps {
 export interface NavBarProps {
   /** max 40 chars */
   logo_text: string;
-  links: {
+  links: ({
   /** max 40 chars */
   label: string;
   /** format: uri-reference */
   href: string;
-  };
+  })[];
   /** max 40 chars */
   cta_text?: string;
   /** format: uri-reference */
@@ -146,7 +146,7 @@ export interface PricingTableProps {
   title?: string;
   /** max 200 chars */
   subtitle?: string;
-  plans: {
+  plans: ({
   /** max 50 chars */
   name: string;
   /** max 150 chars */
@@ -160,7 +160,7 @@ export interface PricingTableProps {
   /** format: uri-reference */
   cta_href: string;
   features: string[];
-  };
+  })[];
 }
 
 /** A generic container section with optional heading and background. The root building block of every page tree. */
@@ -179,7 +179,7 @@ export interface TestimonialSectionProps {
   /** max 100 chars */
   title?: string;
   columns?: 1 | 2 | 3; // @default 3
-  testimonials: {
+  testimonials: ({
   /** max 300 chars */
   quote: string;
   /** max 80 chars */
@@ -190,7 +190,7 @@ export interface TestimonialSectionProps {
   author_company?: string;
   /** format: uri */
   avatar_url?: string;
-  };
+  })[];
 }
 
 /** A standalone paragraph of body text with configurable size and alignment. */

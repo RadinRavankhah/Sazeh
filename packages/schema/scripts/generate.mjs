@@ -31,7 +31,7 @@ const jsonToTsType = (schema, required, indent) => {
         case "array": {
           const item = propSchema.items ?? {};
           if (item.type === "object" && item.properties) {
-            tsType = nestedInterface(key, item, `${indent}  `);
+            tsType = `(${nestedInterface(key, item, `${indent}  `)})[]`;
           } else if (Array.isArray(item.enum)) {
             tsType = `(${item.enum.map((v) => JSON.stringify(v)).join(" | ")})[]`;
           } else {
