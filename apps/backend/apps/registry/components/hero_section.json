@@ -1,0 +1,28 @@
+{
+  "name": "HeroSection",
+  "display_name": "Hero Section",
+  "category": "composite",
+  "description": "A full-width hero banner with headline, subtext, CTA buttons, and optional background image.",
+  "icon": "layout-hero",
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "headline": { "type": "string", "minLength": 1 },
+      "subtext": { "type": "string" },
+      "cta_primary_label": { "type": "string" },
+      "cta_primary_url": { "type": "string", "format": "uri" },
+      "cta_secondary_label": { "type": "string" },
+      "cta_secondary_url": { "type": "string", "format": "uri" },
+      "background_image": { "type": "string" },
+      "alignment": { "type": "string", "enum": ["left", "center", "right"] }
+    },
+    "required": ["headline"]
+  },
+  "default_props": {
+    "headline": "Welcome to Your Site",
+    "subtext": "",
+    "alignment": "center"
+  },
+  "allowed_children": []
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Section",
+  "display_name": "Section",
+  "category": "primitive",
+  "description": "A generic container section with optional heading and background.",
+  "icon": "layout-section",
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "heading": { "type": "string" },
+      "background_color": { "type": "string" },
+      "padding": { "type": "string", "enum": ["none", "sm", "md", "lg", "xl"] },
+      "container_width": { "type": "string", "enum": ["full", "contained", "narrow"] }
+    },
+    "required": []
+  },
+  "default_props": {
+    "padding": "md",
+    "container_width": "contained"
+  },
+  "allowed_children": ["*"]
+}
