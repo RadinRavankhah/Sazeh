@@ -23,6 +23,9 @@ class Component(models.Model):
     # Optional: which slot children this component accepts
     allowed_children = models.JSONField(default=list)             # list of component names
 
+    # Realistic example props — the agent's copy-modify pattern (plan §8)
+    example_payload = models.JSONField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

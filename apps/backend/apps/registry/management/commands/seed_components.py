@@ -34,6 +34,7 @@ class Command(BaseCommand):
                     "schema": data["schema"],
                     "default_props": data.get("default_props", {}),
                     "allowed_children": data.get("allowed_children", []),
+                    "example_payload": data.get("example_payload"),
                 },
             )
             status = "Created" if created else "Updated"

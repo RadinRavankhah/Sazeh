@@ -14,5 +14,5 @@ class ComponentDetailSerializer(serializers.ModelSerializer):
         model = Component
         fields = [
             "name", "display_name", "category", "description", "icon",
-            "schema", "default_props", "allowed_children",
+            "schema", "default_props", "allowed_children", "example_payload",
         ]

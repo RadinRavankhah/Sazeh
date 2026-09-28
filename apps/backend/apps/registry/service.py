@@ -30,6 +30,7 @@ class RegistryService:
                 "schema": c.schema,
                 "default_props": c.default_props,
                 "allowed_children": c.allowed_children,
+                "example_payload": c.example_payload,
             }
         cache.set(CACHE_KEY_BY_NAME, by_name, CACHE_TIMEOUT)
         cache.set(CACHE_KEY_ALL, list(by_name.values()), CACHE_TIMEOUT)
