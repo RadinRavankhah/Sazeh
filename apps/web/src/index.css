@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/outfit";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -135,3 +137,22 @@
     @apply font-sans;
     }
 }
+
+/*
+ * Site preview scoping — a rendered page tree consumes the SITE's theme
+ * tokens (D2.2), not the app chrome's. SiteThemeStyle sets --site-* vars;
+ * the rules below translate heading_scale / font choices into typography.
+ */
+.site-preview {
+  font-family: var(--site-font);
+}
+
+.site-preview[data-heading-scale="compact"] h1 { font-size: clamp(1.75rem, 3vw, 2.25rem); }
+.site-preview[data-heading-scale="compact"] h2 { font-size: clamp(1.375rem, 2.2vw, 1.625rem); }
+.site-preview[data-heading-scale="compact"] h3 { font-size: clamp(1.125rem, 1.6vw, 1.25rem); }
+.site-preview[data-heading-scale="normal"] h1 { font-size: clamp(2rem, 4.5vw, 2.875rem); }
+.site-preview[data-heading-scale="normal"] h2 { font-size: clamp(1.5rem, 2.6vw, 1.875rem); }
+.site-preview[data-heading-scale="normal"] h3 { font-size: clamp(1.25rem, 1.8vw, 1.375rem); }
+.site-preview[data-heading-scale="large"] h1 { font-size: clamp(2.375rem, 5.5vw, 3.5rem); }
+.site-preview[data-heading-scale="large"] h2 { font-size: clamp(1.75rem, 3vw, 2.25rem); }
+.site-preview[data-heading-scale="large"] h3 { font-size: clamp(1.375rem, 2vw, 1.5rem); }
