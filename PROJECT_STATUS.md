@@ -32,8 +32,9 @@ This document was first written after an audit that found the project unable to 
 |---|---|
 | `manage.py check` | clean |
 | `ruff check .` | clean |
-| `mypy .` | clean (49 files) |
-| `pytest` | **32 passed** (tree engine, validator, tenancy/IDOR regressions, roles, signals) |
+| `mypy .` | clean (53 files) |
+| `pytest` | **52 passed** (tree engine, validator, tenancy/IDOR regressions, roles, signals, headless auth flow) |
+| `tsc -b` / `vite build` (apps/web) | clean (chunk >500 kB warning — code-split later) |
 | Boot smoke | migrate OK; `/admin/login/` → 200; `/api/v1/me/` → 403 unauthenticated |
 | CI | `.github/workflows/backend.yml` — ruff + mypy + check + pytest on Postgres 16 |
 
@@ -78,10 +79,10 @@ Findings from the audit → what was done:
 
 | Phase | Status | Notes |
 |---|---|---|
-| 0 — Scaffolding | 🟢 ~90% | Missing: design-token sheet, `apps/web` |
+| 0 — Scaffolding | 🟢 done | `apps/web` scaffolded (Vite + React 18.3 + TS 6 strict + Tailwind v4 via Vite plugin + shadcn base-nova); design-token sheet delivered (`apps/web/DESIGN_TOKENS.md` + themed `index.css`); `@sazeh/schema` consumed via path alias |
 | 1 — Accounts & Data Layer | 🟢 done | Models, migrations, signals, tenancy, admin, tests |
 | 2 — Registry & Engine | 🟢 done (backend) | **Launch catalog (9 composites + 6 primitives, D2.1) seeded with example payloads; schemas Draft-07 with `additionalProperties: false`; `example_payload` field; theme tokens (D2.2, `apps/sites/theme.py`); `packages/schema` generates strict TS types from the catalog (47 tests green).** Remaining: React `ComponentRenderer` + render harness (Phase 2 tasks 5–6, frontend) |
-| 3 — Auth & Dashboard | 🔴 0% | Decided (D3.2): session cookies for the SPA. allauth is currently server-rendered only → needs SPA wiring (headless/custom views + CSRF endpoint) |
+| 3 — Auth & Dashboard | 🟠 ~50% | **Pass 1 done:** allauth headless (`/_allauth/browser/v1/*`) behind session cookies (D3.2, D3.1 email/password only — email verification deferred, `ACCOUNT_EMAIL_VERIFICATION=none`); `/api/v1/me/` returns `default_workspace`; SPA login/signup/logout with React Hook Form + Zod; working route guards + auth store. **Pass 2 next:** sites grid, create-site flow, theme settings, generate stub |
 | 4–10 | 🔴 0% | Editor, agent orchestrator/UX, publishing, media, billing, hardening |
 
 ### Decision log
@@ -94,6 +95,6 @@ The plan's "parse `/shadcn/*.md` into schemas" pipeline was realized as **hand-c
 
 ## 5. Next Steps (recommended order)
 
-1. Scaffold `apps/web` (Vite + React 18 + TS strict + Tailwind v4 + shadcn init) and the design-token sheet (Phase 0 leftover) — chat-first (D0.1) makes the auth screens + generate/chat view the first UI targets; session-cookie auth wiring (D3.2) lands with it.
-2. Phase 2 tasks 5–6 (frontend): `ComponentRenderer`/`PageRenderer` + render harness consuming `@sazeh/schema`'s `CATALOG`.
-3. Phase 5 planning: answer **D5.1–D5.4**, then the LLM adapter (OpenAI-compatible per D0.2) + orchestrator loop.
+1. **Pass 2 — dashboard shell:** real sites grid (replaces the placeholder), create-site flow → chat-first redirect (`/sites/:id/generate`, D0.1), theme token editor (first D2.2 consumer, Zod mirroring `theme.py`), generate screen stub with honest "agent arrives in Phase 5" notice.
+2. Phase 2 tasks 5–6 (frontend): `ComponentRenderer`/`PageRenderer` + render harness consuming `@sazeh/schema`'s `CATALOG` — feeds the Pass 2 generate screen and later the editor canvas.
+3. Phase 5 planning: answer **D5.1–D5.4**, then the LLM adapter (OpenAI-compatible per D0.2) + orchestrator loop; the generate screen goes live when this lands.
