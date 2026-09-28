@@ -1,0 +1,14 @@
+{
+  "name": "@sazeh/schema",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared TypeScript types generated from the Sazeh component registry (source of truth: apps/backend/apps/registry/components/)",
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
