@@ -1,0 +1,49 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["apps/backend/**", ".github/workflows/backend.yml"]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      DJANGO_SECRET_KEY: ci-only-secret
+      # settings_test.py uses a real Postgres when DATABASE_URL is set,
+      # falling back to in-memory SQLite locally.
+      DATABASE_URL: postgres://sazeh:sazeh@localhost:5432/sazeh_test
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sazeh_test
+          POSTGRES_USER: sazeh
+          POSTGRES_PASSWORD: sazeh
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sazeh"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Type check (mypy)
+        run: mypy .
+      - name: Django system checks
+        run: python manage.py check
+      - name: Tests (pytest)
+        run: python -m pytest -q
