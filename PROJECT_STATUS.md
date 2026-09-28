@@ -73,6 +73,9 @@ Findings from the audit → what was done:
 17. `sazeh-dev-plan.md` corrupted code fence repaired (fence fix kept); `shadcn/components.md` absolute URLs restored.
 18. `.gitignore` extended (generated index artifacts, Python/env/Django files); repo committed in logical commits (git-staged-commit workflow).
 
+**Found by manual testing (2026-09-29, fixed)**
+19. Login/signup blocked with Zod's `Invalid input: expected string, received undefined` on both fields → shadcn **base-style** components are written for React 19 ref-as-prop semantics, but the app runs React 18.3, where React strips `ref` before it reaches a plain function component. `ui/input.tsx` (a plain function component) dropped RHF's `register()` ref → `onChange` overwrote `defaultValues` with `undefined` → resolver saw `{}`. Fix: `ui/input.tsx` and `ui/button.tsx` wrapped in `React.forwardRef` with explicit ref pass-through to the Base UI primitive. **Convention while on React 18: every `ui/` wrapper that delegates to a primitive (or native element) and can receive a ref from forms must use `forwardRef` — adding new form primitives (textarea, checkbox, …) requires it.** Known latent inconsistency: `@types/react` is still 19 on a React 18.3 runtime (this is what masked the bug from `tsc`); aligning types is churn — revisit if React-19-only typing errors appear.
+
 ---
 
 ## 4. Plan Phase Scorecard (updated)
