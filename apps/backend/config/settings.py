@@ -69,7 +69,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "allauth",
     "allauth.account",
-    "allauth.socialaccount",
+    "allauth.headless",
     "django_filters",
     # Local apps
     "apps.accounts",
@@ -131,7 +131,22 @@ SITE_ID = 1
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
-ACCOUNT_EMAIL_VERIFICATION = "optional"
+# MVP (D3.1): email/password only, no SMTP in dev — verification deferred.
+ACCOUNT_EMAIL_VERIFICATION = "none"
+
+# allauth headless: SPA-only auth over session cookies (decision D3.2).
+HEADLESS_ONLY = True
+HEADLESS_CLIENT_TYPE = "browser"
+# SPA routes allauth refers to in emails/redirects (wired as UI lands).
+HEADLESS_FRONTEND_URLS = {
+    "account_confirm_email": "/auth/verify-email?key={key}",
+    "account_reset_password_from_key": "/auth/reset-password?key={key}",
+    "account_set_password_from_key": "/auth/set-password?key={key}",
+    "account_signup": "/signup",
+    "account_login": "/login",
+    "account_logout": "/",
+    "email_verification_sent": "/auth/verify-email-sent",
+}
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
@@ -160,7 +175,7 @@ REST_FRAMEWORK = {
 }
 
 # ---------------------------------------------------------------------------
-# 4. CORS (dev)
+# 4. CORS / CSRF (dev: Vite on 5173 talks to Django on 8000)
 # ---------------------------------------------------------------------------
 
 CORS_ALLOW_CREDENTIALS = True
@@ -168,6 +183,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+SESSION_COOKIE_SAMESITE = "Lax"
 
 # ---------------------------------------------------------------------------
 # 5. Redis / Cache
