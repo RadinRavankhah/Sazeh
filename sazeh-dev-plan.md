@@ -153,7 +153,7 @@ This means the reliability floor is the component library, not the agent. A bad 
 
 ### `Tenant`
 
-python
+```python
 class Tenant(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     name = models.CharField(max_length=255)
@@ -165,9 +165,9 @@ class Tenant(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-```python
-class Meta:     db_table = "tenants"
+
+    class Meta:
+        db_table = "tenants"
 ```
 ### `Site`
 
@@ -641,7 +641,9 @@ DELETE /api/v1/sites/{site_id}/
 
 Create a page with an initial tree.
 
-Request:````
+Request:
+
+```
 json
 {
   "title": "Home",
@@ -674,9 +676,9 @@ json
   "meta_description": "Acme Corp builds AI-powered tools."
 }
 ```
-On validation failure, the response is a `422` with a list of errors:
-```
-json
+on validation failure, the response is a `422` with a list of erros:
+
+```json
 {
   "error": "validation_error",
   "detail": [
