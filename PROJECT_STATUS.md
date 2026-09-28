@@ -75,6 +75,7 @@ Findings from the audit → what was done:
 
 **Found by manual testing (2026-09-29, fixed)**
 19. Login/signup blocked with Zod's `Invalid input: expected string, received undefined` on both fields → shadcn **base-style** components are written for React 19 ref-as-prop semantics, but the app runs React 18.3, where React strips `ref` before it reaches a plain function component. `ui/input.tsx` (a plain function component) dropped RHF's `register()` ref → `onChange` overwrote `defaultValues` with `undefined` → resolver saw `{}`. Fix: `ui/input.tsx` and `ui/button.tsx` wrapped in `React.forwardRef` with explicit ref pass-through to the Base UI primitive. **Convention while on React 18: every `ui/` wrapper that delegates to a primitive (or native element) and can receive a ref from forms must use `forwardRef` — adding new form primitives (textarea, checkbox, …) requires it.** Known latent inconsistency: `@types/react` is still 19 on a React 18.3 runtime (this is what masked the bug from `tsc`); aligning types is churn — revisit if React-19-only typing errors appear.
+20. Follow-up 403 on allauth POSTs (CSRF HTML page, 2855 bytes): the SPA on `localhost:5173` can't read the `csrftoken` cookie Django sets for `127.0.0.1:8000` (different hosts; cookies ignore ports). **Decision (user): no Vite proxy — the dev convention is to browse the SPA at `http://127.0.0.1:5173`** so SPA and API share the host; CORS/CSRF settings already cover it. Documented in README; `localhost:5173` will 403 by design.
 
 ---
 

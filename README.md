@@ -101,11 +101,17 @@ docker compose run --rm web python manage.py migrate
 ```bash
 cd apps/web
 npm install
-npm run dev          # http://localhost:5173 (talks to the backend on :8000)
+npm run dev          # http://127.0.0.1:5173 (talks to the backend on :8000)
 ```
 
-Auth is session-cookie based: sign up at `http://localhost:5173/signup`.
+Auth is session-cookie based: sign up at `http://127.0.0.1:5173/signup`.
 CORS/CSRF for the 5173→8000 dev pairing are pre-configured on the backend.
+
+**Always browse the dev server via `127.0.0.1`, not `localhost`.** Cookies are
+scoped per host (not per port): `csrftoken` and the session cookie are set for
+`127.0.0.1:8000` and are only visible/sent when the SPA is also on
+`127.0.0.1`. `localhost` and `127.0.0.1` are different hosts, so using
+`localhost:5173` silently breaks CSRF (403 on login/signup).
 
 ## Shared Types (`packages/schema`)
 
