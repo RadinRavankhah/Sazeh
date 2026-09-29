@@ -8,4 +8,5 @@ urlpatterns = [
     path("api/v1/", include("apps.workspaces.urls")),
     path("api/v1/", include("apps.registry.urls")),
     path("api/v1/", include("apps.sites.urls")),
+    path("api/v1/agent/", include("apps.agent.urls")),
 ]

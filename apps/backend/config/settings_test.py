@@ -23,3 +23,7 @@ else:
 CACHES = {
     "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
 }
+
+# Agent: no Redis service in tests — process-local locks; scripted LLM.
+AGENT_LOCKS = "off"
+AGENT_LLM_ADAPTER = "fake"

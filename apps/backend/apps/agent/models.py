@@ -32,7 +32,6 @@ class AgentSession(models.Model):
     def __str__(self):
         return self.title or str(self.id)
 
-
 class AgentMessage(models.Model):
     """Every message in a session, human and assistant."""
 
@@ -53,7 +52,9 @@ class AgentMessage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["created_at"]
+        # Insertion order (ids) — created_at ties on coarse clocks would make
+        # history replay unstable.
+        ordering = ["id"]
 
     def __str__(self):
         return f"{self.role}: {self.pk}"
@@ -84,3 +85,43 @@ class ToolRun(models.Model):
 
     def __str__(self):
         return f"{self.tool_name} ({self.result_status})"
+
+
+class AgentRun(models.Model):
+    """One unit of agent work: the loop triggered by a user message.
+
+    Budgets are enforced at turn boundaries against the counters below, which
+    are persisted incrementally so a crashed worker never loses usage data.
+    Cancel is cooperative: `cancel_requested` is checked between turns.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"  # created; loop starts on SSE connect
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+        FAILED = "failed", "Failed"
+        BUDGET_EXHAUSTED = "budget_exhausted", "Budget exhausted"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    session = models.ForeignKey(
+        AgentSession, related_name="runs", on_delete=models.CASCADE
+    )
+    page = models.ForeignKey(Page, null=True, blank=True, on_delete=models.SET_NULL)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    model_name = models.CharField(max_length=128, blank=True)
+    turns = models.PositiveIntegerField(default=0)
+    tokens_in = models.PositiveIntegerField(default=0)
+    tokens_out = models.PositiveIntegerField(default=0)
+    cancel_requested = models.BooleanField(default=False)
+    finish_reason = models.CharField(max_length=255, blank=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-started_at"]
+
+    def __str__(self):
+        return f"run {self.pk} ({self.status})"

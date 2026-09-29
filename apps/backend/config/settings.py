@@ -43,6 +43,16 @@ class _Settings(BaseSettings):
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"
 
+    # Agent run budgets (decision D5.4 — env-overridable defaults)
+    AGENT_MAX_TURNS: int = 25
+    AGENT_MAX_TOKENS_RUN_TOTAL: int = 100_000
+    AGENT_MAX_TOKENS_RUN_OUTPUT: int = 32_000
+    AGENT_MAX_SELFHEAL_RETRIES: int = 2
+    AGENT_RUN_TIMEOUT_S: int = 300
+    AGENT_LLM_TIMEOUT_S: int = 120
+    AGENT_LLM_ADAPTER: str = "openai"  # "fake" in tests (scripted)
+    AGENT_LOCKS: str = "redis"  # "off" in tests (no redis service)
+
 
 _env = _Settings()
 
@@ -77,6 +87,7 @@ INSTALLED_APPS = [
     "apps.registry",
     "apps.sites",
     "apps.agent",
+    "apps.usage",
 ]
 
 MIDDLEWARE = [
@@ -228,3 +239,56 @@ REDIS_LOCK_PREFIX = "sazeh:locks:"
 DEFAULT_FREE_SITES_LIMIT = 1
 DEFAULT_FREE_PAGES_LIMIT = 5
 DEFAULT_FREE_CREDITS = 50
+
+# ---------------------------------------------------------------------------
+# 8. Logging (structlog: JSON in prod, pretty console in dev)
+# ---------------------------------------------------------------------------
+
+import structlog  # noqa: E402
+
+_LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
+_TIMESTAMPER = structlog.processors.TimeStamper(fmt="iso", utc=True)
+
+_PRE_CHAIN: list = [
+    structlog.contextvars.merge_contextvars,
+    structlog.stdlib.add_logger_name,
+    structlog.stdlib.add_log_level,
+    _TIMESTAMPER,
+    structlog.stdlib.ExtraAdder(),
+    structlog.processors.StackInfoRenderer(),
+    structlog.processors.format_exc_info,
+]
+
+structlog.configure(
+    processors=[
+        *_PRE_CHAIN,
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
+
+_formatter = structlog.stdlib.ProcessorFormatter(
+    foreign_pre_chain=_PRE_CHAIN,
+    processors=[
+        structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+        structlog.processors.JSONRenderer()
+        if not DEBUG
+        else structlog.dev.ConsoleRenderer(colors=False),
+    ],
+)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"structlog": {"()": lambda: _formatter}},
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "structlog"},
+    },
+    "loggers": {
+        "agent": {"handlers": ["console"], "level": _LOG_LEVEL, "propagate": False},
+        "django": {"handlers": ["console"], "level": _LOG_LEVEL},
+        "django.server": {"handlers": ["console"], "level": _LOG_LEVEL},
+    },
+}
