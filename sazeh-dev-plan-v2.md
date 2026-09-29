@@ -582,23 +582,29 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 > (b) Approve-diff — agent proposes; user reviews a before/after and accepts (safer, slower feel)
 > (c) Hybrid — direct apply for small patches, approval gate for page creation/deletion.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(a) Direct apply** — with mandatory history + revert: every run's tree mutations snapshot into `ToolRun.tree_snapshot_before`; "Restore to before this run" action (POST `/agent/runs/{id}/revert/`) restores affected pages. UI button lives in the chat under the latest run.
 
 > **[DECISION NEEDED] D5.2 — Streaming transport.**
 > (a) SSE (one-way, simple, fits token streaming; actions go via normal REST) — recommended
 > (b) WebSocket (bidirectional; more infra/complexity than needed for MVP).
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(a) SSE.** The run loop executes inside the SSE GET request (MVP topology; adapter/orchestrator are Celery-portable later). Event protocol per §8. Terminal-run replay makes EventSource reconnects harmless.
 
 > **[DECISION NEEDED] D5.3 — Conversation scope.**
 > Chat scoped per (a) site (one thread knows the whole site), or (b) per page, or (c) per site with page-context switching. Affects context assembly and UI.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(c) Per site with page-context switching.** Multiple chats per site (side menu, ChatGPT-style); each chat may touch any page of the site; `AgentSession.page` is the *focused page* (full tree in context) and is switchable; all pages always appear as section summaries. Tools operate across the whole site (tenancy floor: session's site).
 
 > **[DECISION NEEDED] D5.4 — Run budgets (numbers).**
 > Max tool iterations per run, max tokens per run, max retries per failed tool call (proposed: 25 / ~100k / 2).
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **25 turns / 100k total tokens + 32k output tokens / 2 self-heal retries** — all env-overridable (`AGENT_*`), checked only at turn boundaries, counters persisted incrementally per turn, breach ⇒ graceful summary + `budget_exhausted`. Companion caps: 120s per LLM call, 300s wall clock, TTL'd Redis lock. Transport retries (adapter-level, backoff + `Retry-After`) are separate from model self-healing.
+
+> **[DECISION NEEDED] D5.5 — Agent framework (added during planning).**
+> (a) Hand-rolled orchestrator (Django service module per §8) with the OpenAI SDK client only
+> (b) LangGraph (+ LangChain ecosystem)
+>
+> **[YOUR ANSWER]:** **(a) Hand-rolled** for now: single-cycle loop, few tools; our own persistence/audit (AgentMessage/ToolRun/AgentRun) replaces framework checkpointing; hermetic fake-LLM tests; deps stay lean. "RAG" is agentic retrieval over the structured registry (compact catalog in prompt + get_component on demand + tree summaries) — no vector store until a real unstructured corpus exists (Phase 8 revisit). Logging via **structlog** (JSON in prod, console in dev; run-scoped contextvars); full payloads live in DB rows for later analysis, not log files.
 
 ---
 

@@ -87,7 +87,10 @@ Findings from the audit → what was done:
 | 1 — Accounts & Data Layer | 🟢 done | Models, migrations, signals, tenancy, admin, tests |
 | 2 — Registry & Engine | 🟢 done | Launch catalog (9 composites + 6 primitives, D2.1) seeded with example payloads; schemas Draft-07 with `additionalProperties: false`; `example_payload` field; theme tokens (D2.2, `apps/sites/theme.py`); `packages/schema` strict TS types; **React `ComponentRenderer`/`PageRenderer` + `COMPONENT_MAP` (all 15 components) + read-only preview harness** (Phase 2 tasks 5–6). Generator bug fixed: array-of-objects props now emit as arrays |
 | 3 — Auth & Dashboard | 🟢 ~90% | **Pass 1 done:** allauth headless (`/_allauth/browser/v1/*`) behind session cookies (D3.2, D3.1 email/password only — email verification deferred, `ACCOUNT_EMAIL_VERIFICATION=none`); `/api/v1/me/` returns `default_workspace`; SPA login/signup/logout with React Hook Form + Zod; route guards + auth store. **Pass 2 done:** sites grid (create/rename/delete, live slug, empty states), post-create redirect → `/sites/:id/generate` (D0.1) with honest "agent arrives in Phase 5" stub + example-page seeder, theme token editor (first D2.2 consumer, Zod mirroring `theme.py`, server-side backstop in `SiteSerializer`), full-bleed draft preview with scoped site-theme CSS vars. **Remaining:** password-reset flow, dashboard polish |
-| 4–10 | 🔴 0% | Editor, agent orchestrator/UX, publishing, media, billing, hardening |
+| 4 — Visual Editor | 🔴 0% | Needs D4.1–D4.3; reuses Pass 2 renderer |
+| 5 — Agent Core | 🟢 done (backend) | **D5.1–D5.5 decided (see plan §14).** Hand-rolled orchestrator loop (`apps/agent/orchestrator.py`): per-session Redis lock, budgets at turn boundaries (25 turns / 100k total / 32k output / 2 self-heal / 300s wall — env `AGENT_*`), cooperative cancel, incremental counters, ToolRun snapshots, graceful exhaustion. OpenAI-SDK adapter (D0.2, env-configured) + scripted `FakeLLM` for tests. 6 tools over the service layer; context builder = agentic retrieval (compact catalog / get_component / tree summaries). REST: sessions CRUD + messages, SSE `/agent/runs/{id}/events/` (loop drives the stream), cancel, revert. `AgentRun` model + `apps/usage.UsageEvent` metering. structlog JSON logging (run-scoped). 102 backend tests |
+| 6 — Agent UX | 🟠 ~40% | **Chat UI live:** per-site chat page (`/sites/:id/generate`) with sessions side menu (new chat, auto-title, resume), streaming text, tool activity feed, focused-page switcher, Stop + "Restore to before this run" actions, starter prompts, example-page seeder for key-less demos. Remaining: canvas integration (Phase 4), selection-aware messages (D6.1), named-version history (D6.2), credit preview (Phase 9) |
+| 7–10 | 🔴 0% | Publishing, media/templates, billing, hardening |
 
 ### Decision log
 Decided on 2026-09-28: **D0.1 = chat-first** (Lovable model), **D0.2 = OpenAI-compatible LLM endpoint** (env-configured; user-selectable model catalog with per-model credit pricing folds into Phase 5/D9.2), **D3.1 = email/password only**, **D3.2 = session cookies now, JWT with the public API later**, **D2.1 = 9 composites + 6 primitives** (ContactForm/LogoWall/ImageGallery deferred to Phase 8), **D2.2 = extended theme tokens** (accent/font/radius/heading-scale + section background variants). Remaining pending: `D0.3`, `D0.4`, `D1.1`, `D1.2`, `D4.1`–`D4.3`, `D5.1`–`D5.4`, `D6.1`, `D6.2`, `D7.1`–`D7.3`, `D8.1`, `D8.2`, `D9.1`, `D9.2`, `D10.1`, `D10.2`. Next gating: none — Phase 3 frontend work can start; **D5.1–D5.4** needed before the orchestrator.
@@ -99,8 +102,8 @@ The plan's "parse `/shadcn/*.md` into schemas" pipeline was realized as **hand-c
 
 ## 5. Next Steps (recommended order)
 
-1. **Answer D5.1–D5.4** (streaming transport, model exposure, session/autonomy model) — gates the orchestrator; then Phase 5 backend (LLM adapter per D0.2, AgentSession/ToolRun models, tool loop) makes the generate screen live.
-2. **Phase 4 decisions D4.1–D4.3** (inline editing, breakpoints, editor user) — then the three-panel visual editor reuses the Pass 2 `ComponentRenderer`/`COMPONENT_MAP` on the canvas.
+1. **Answer D4.1–D4.3** → Phase 4 visual editor (palette/canvas/inspector reusing `ComponentRenderer`); agent chat then docks into the editor (completes Phase 6).
+2. **Phase 5/6 polish from real usage:** tune system prompt + budgets off `ToolRun`/`UsageEvent` data (queryable in admin); context-length trimming is the first known refinement point.
 3. **Phase 3 remainder:** password-reset flow + dashboard polish (can slot in any time).
 
 ---
@@ -111,4 +114,13 @@ The plan's "parse `/shadcn/*.md` into schemas" pipeline was realized as **hand-c
 - **Theme backstop:** `SiteSerializer.validate_config` runs `validate_theme` on `config["theme"]` — invalid sheets are rejected 400 with field-level errors.
 - **Generator fix:** `packages/schema/scripts/generate.mjs` emitted array-of-objects props (`items`, `plans`, `testimonials`, `links`) as single objects — now `({...})[]`; catalog regenerated.
 - **Render engine:** `apps/web/src/render/` — `COMPONENT_MAP` (15/15 launch components on shadcn primitives), recursive `ComponentRenderer` with unknown-component fallback, `SiteThemeStyle` scoping `--primary`/`--ring`/`--radius`/font from `site.config.theme` (satoshi falls back to system until bundled — Fontshare-licensed).
-- **Preview is read-only by design** (chat-first D0.1; interactive surface is Phase 4's editor). The generate stub's "Preview an example page" seeds 7 example sections through the real `tree/patch` API — exercises the engine + client-side `TreePatchOp` end to end.
+- **Preview is read-only by design** (chat-first D0.1; interactive surface is Phase 4's editor). The chat empty state's "Fill the Home page with an example" seeds 7 example sections through the real `tree/patch` API — exercises the engine + client-side `TreePatchOp` end to end.
+
+---
+
+## 7. Pass 3 implementation notes (2026-09-29)
+
+- **Decisions locked:** D5.1 (a) direct apply + revert, D5.2 (a) SSE, D5.3 (c) per-site chats with page-context switching, D5.4 budgets (25 / 100k / 32k / 2 / 300s, env `AGENT_*`), **D5.5 (new) hand-rolled loop + OpenAI SDK + structlog** — all recorded in `sazeh-dev-plan-v2.md` §14.
+- **Workflow in one line:** message → `AgentRun` (pending) → SSE connect acquires the session lock and drives the loop → per turn: assemble context (system prompt + compact catalog + site overview + focused tree + trimmed history) → stream LLM → execute tool calls against the service layer (validated; snapshot into `ToolRun`) → feed results back → final message + `UsageEvent`. Termination: done / cancelled / failed / budget_exhausted — all with a persisted assistant summary.
+- **Glossary:** chat=session, run=one send→reply unit of work, turn=one LLM round-trip (cap counts these), tool call=one requested action (audit: `ToolRun`), event=one SSE tick. See `apps/agent/orchestrator.py` module docstring for invariants.
+- **Analyzability:** full prompts/responses/tool args live in DB rows (admin-browsable), log files carry only ids/statuses/latencies — future tuning is SQL over `ToolRun`/`UsageEvent`/`AgentRun`.
