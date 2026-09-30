@@ -53,6 +53,9 @@ class _Settings(BaseSettings):
     AGENT_LLM_ADAPTER: str = "openai"  # "fake" in tests (scripted)
     AGENT_LOCKS: str = "redis"  # "off" in tests (no redis service)
 
+    # Logging (console verbosity; empty = DEBUG in dev, INFO in prod)
+    LOG_LEVEL: str = ""
+
 
 _env = _Settings()
 
@@ -246,7 +249,7 @@ DEFAULT_FREE_CREDITS = 50
 
 import structlog  # noqa: E402
 
-_LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
+_LOG_LEVEL = (_env.LOG_LEVEL or ("DEBUG" if DEBUG else "INFO")).upper()
 _TIMESTAMPER = structlog.processors.TimeStamper(fmt="iso", utc=True)
 
 _PRE_CHAIN: list = [

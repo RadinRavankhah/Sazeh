@@ -94,6 +94,7 @@ docker compose run --rm web python manage.py migrate
 | `REDIS_URL` | `redis://localhost:6379/0` | Cache + Celery result backend |
 | `CELERY_BROKER_URL` | `redis://localhost:6379/1` | Celery broker |
 | `LLM_PROVIDER` / `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` | OpenAI-compatible | Agent LLM config (Phase 5; any OpenAI-compatible gateway) |
+| `LOG_LEVEL` | `DEBUG` in dev, `INFO` in prod | Console verbosity: `DEBUG` (incl. SQL), `INFO` (requests), `WARNING`, `ERROR`, `CRITICAL` (silent). `.env.example` ships `WARNING` — set `DEBUG` for full agent/SQL output, or override per-session: `$env:LOG_LEVEL="DEBUG"; python manage.py runserver` |
 | `AWS_*` | — | S3 for media/publishing (Phase 7–8) |
 
 ## Frontend Setup
