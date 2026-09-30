@@ -28,6 +28,14 @@ class AgentRunSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "started_at", "finished_at"]
 
 
+class SelectionSerializer(serializers.Serializer):
+    """D6.1: the element the user selected in the visual editor."""
+
+    page = serializers.UUIDField()
+    node = serializers.CharField(max_length=64)
+
+
 class PostMessageSerializer(serializers.Serializer):
     content = serializers.CharField(max_length=8_000)
     page = serializers.UUIDField(required=False, allow_null=True)
+    selection = SelectionSerializer(required=False, allow_null=True)

@@ -124,6 +124,78 @@ def test_post_message_tenancy(api, user_b, session):
     assert resp.status_code == 404
 
 
+# ---------------------------------------------------------------- selection (D6.1)
+
+@pytest.mark.django_db
+def test_post_message_with_selection_lands_on_run(api, user_a, session, page_a):
+    api.force_authenticate(user=user_a)
+    resp = api.post(
+        f"/api/v1/agent/sessions/{session.id}/messages/",
+        {
+            "content": "make this darker",
+            "selection": {"page": str(page_a.id), "node": "root"},
+        },
+        format="json",
+    )
+    assert resp.status_code == 201
+    run = AgentRun.objects.get(pk=resp.data["run"]["id"])
+    assert run.selection_node_id == "root"  # synthetic root ids are valid too
+    assert str(run.page_id) == str(page_a.id)
+
+
+@pytest.mark.django_db
+def test_post_message_selection_unknown_node_is_400(api, user_a, session, page_a):
+    api.force_authenticate(user=user_a)
+    resp = api.post(
+        f"/api/v1/agent/sessions/{session.id}/messages/",
+        {
+            "content": "hi",
+            "selection": {"page": str(page_a.id), "node": "gone"},
+        },
+        format="json",
+    )
+    assert resp.status_code == 400
+    assert "node" in resp.data["selection"]
+
+
+@pytest.mark.django_db
+def test_post_message_selection_foreign_page_is_404(api, user_a, user_b, session):
+    from apps.sites.models import Page, Site
+
+    ws_b = user_b.owned_workspaces.get()
+    foreign_site = Site.objects.create(workspace=ws_b, name="B", slug="b-site")
+    foreign_page = Page.objects.create(
+        site=foreign_site, title="Home", slug="home",
+        tree={"id": "root", "component": "Section", "props": {}, "children": []},
+    )
+    api.force_authenticate(user=user_a)
+    resp = api.post(
+        f"/api/v1/agent/sessions/{session.id}/messages/",
+        {
+            "content": "hi",
+            "selection": {"page": str(foreign_page.id), "node": "root"},
+        },
+        format="json",
+    )
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_selection_context_injected_into_system_prompt(session, page_a):
+    from apps.agent.context import build_messages
+    from apps.agent.models import AgentRun as Run
+
+    run = Run.objects.create(session=session, page=page_a, selection_node_id="root")
+    messages = build_messages(session, run)
+    system = messages[0]["content"]
+    assert "Currently selected element" in system
+    assert '"component": "Section"' in system or '"component":"Section"' in system
+
+    # Without a selection the block is absent.
+    plain = build_messages(session, Run.objects.create(session=session, page=page_a))
+    assert "Currently selected element" not in plain[0]["content"]
+
+
 # ---------------------------------------------------------------- SSE runs
 
 def drain_events(client, run_id) -> list[dict]:

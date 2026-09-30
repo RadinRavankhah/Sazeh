@@ -24,6 +24,7 @@ from apps.sites.models import Page, Site
 from apps.sites.validators import validate_tree
 from apps.workspaces.scoping import member_workspaces
 
+from .context import find_node
 from .locks import session_lock
 from .models import AgentMessage, AgentRun, AgentSession, ToolRun
 from .orchestrator import stream_run
@@ -130,6 +131,22 @@ class MessageListView(APIView):
 
         content = serializer.validated_data["content"]
         page_id = serializer.validated_data.get("page")
+        selection = serializer.validated_data.get("selection")
+
+        # D6.1 selection context: the referenced page must belong to the
+        # session's site and the node must still exist in its tree.
+        selection_page = None
+        if selection:
+            selection_page = get_object_or_404(
+                Page, pk=selection["page"], site=session.site
+            )
+            if find_node(selection_page.tree or {}, selection["node"]) is None:
+                return Response(
+                    {"selection": {"node": ["Selected element no longer exists on this page."]}},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            page_id = page_id or selection_page.id
+
         if page_id:
             get_object_or_404(Page, pk=page_id, site=session.site)
 
@@ -146,7 +163,9 @@ class MessageListView(APIView):
             session.save(update_fields=["page", "updated_at"])
 
         run = AgentRun.objects.create(
-            session=session, page_id=page_id or session.page_id
+            session=session,
+            page_id=page_id or session.page_id,
+            selection_node_id=(selection["node"] if selection else None),
         )
         logger.info("run.created", run_id=str(run.id), session_id=str(session.id))
         return Response(

@@ -108,6 +108,10 @@ class AgentRun(models.Model):
         AgentSession, related_name="runs", on_delete=models.CASCADE
     )
     page = models.ForeignKey(Page, null=True, blank=True, on_delete=models.SET_NULL)
+    # D6.1 selection-aware chat: the node the user had selected in the visual
+    # editor when sending the message ("make THIS darker"). Char, not UUID —
+    # synthetic root ids ("root") exist in seeded trees.
+    selection_node_id = models.CharField(max_length=64, null=True, blank=True)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING
     )

@@ -81,7 +81,7 @@ def stream_run(run: AgentRun, llm: LLMAdapter | None = None) -> Iterator[dict[st
         site_id=str(session.site_id),
     )
 
-    messages = build_messages(session)
+    messages = build_messages(session, run)
     tools = tool_definitions()
     turns = 0
     tokens_in = 0

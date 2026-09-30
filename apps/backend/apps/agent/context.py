@@ -8,6 +8,7 @@ History is trimmed to a character budget (oldest dropped first).
 """
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import structlog
@@ -15,12 +16,13 @@ import structlog
 from apps.registry.service import registry
 from apps.sites.models import Page
 
-from .models import AgentSession
+from .models import AgentRun, AgentSession
 
 logger = structlog.get_logger("agent.context")
 
 HISTORY_CHAR_BUDGET = 24_000  # ~6k tokens of conversation history
 HISTORY_MAX_MESSAGES = 16
+_SELECTION_CHAR_CAP = 4_000  # selected subtree JSON cap in the prompt
 
 
 def _page_summary(page: Page) -> dict[str, Any]:
@@ -107,10 +109,52 @@ every change happens through tools operating on component trees.
 7. If a request is ambiguous, make a reasonable choice and say what you chose."""
 
 
-def build_messages(session: AgentSession) -> list[dict[str, Any]]:
+def find_node(tree: dict, node_id: str) -> dict | None:
+    """DFS search for a node by id (tree-shaped dict). None when absent."""
+    if tree.get("id") == node_id:
+        return tree
+    for child in tree.get("children", []):
+        found = find_node(child, node_id)
+        if found is not None:
+            return found
+    return None
+
+
+def build_selection_block(run: AgentRun | None) -> str:
+    """Prompt block for the element selected in the visual editor (D6.1).
+
+    The subtree is embedded so "make THIS darker" needs no tool round-trip;
+    capped at _SELECTION_CHAR_CAP with an explicit truncation note.
+    """
+    if run is None or not run.selection_node_id or run.page is None:
+        return ""
+    node = find_node(run.page.tree or {}, run.selection_node_id)
+    if node is None:
+        return ""
+    subtree = json.dumps(node, ensure_ascii=False)
+    if len(subtree) > _SELECTION_CHAR_CAP:
+        subtree = subtree[:_SELECTION_CHAR_CAP] + " …(truncated)"
+    return f"""## Currently selected element
+The user has selected this element in the visual editor. References like
+"this", "here" or "it" in their message mean exactly this node:
+
+page: '{run.page.title}' (id {run.page.id})
+node: {subtree}
+
+Prefer targeting this node (by id) for edits unless the user clearly means
+something else."""
+
+
+def build_messages(
+    session: AgentSession, run: AgentRun | None = None
+) -> list[dict[str, Any]]:
     """The OpenAI wire-format message list for a run's first turn."""
+    system = build_system_prompt(session)
+    selection_block = build_selection_block(run)
+    if selection_block:
+        system = f"{system}\n\n{selection_block}"
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": build_system_prompt(session)}
+        {"role": "system", "content": system}
     ]
 
     history: list[dict[str, Any]] = []
