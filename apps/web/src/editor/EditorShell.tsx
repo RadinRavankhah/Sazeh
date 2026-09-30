@@ -29,10 +29,12 @@ import { api } from "@/lib/api"
 import { updatePage } from "@/lib/editor"
 import { getPageTree, listPages, type PageResource, type SiteResource } from "@/lib/sites"
 import { Canvas } from "@/editor/Canvas"
+import { ChatDock } from "@/editor/ChatDock"
 import { Inspector } from "@/editor/Inspector"
 import { Palette } from "@/editor/Palette"
 import { PagesRail } from "@/editor/PagesRail"
 import { cn } from "@/lib/utils"
+import { useChatStore } from "@/stores/chat"
 import {
   canRedo,
   canUndo,
@@ -64,6 +66,7 @@ export function EditorShell() {
   const [missing, setMissing] = useState(false)
 
   const tree = useEditorStore((s) => s.tree)
+  const selectedId = useEditorStore((s) => s.selectedId)
   const breakpoint = useEditorStore((s) => s.breakpoint)
   const setBreakpoint = useEditorStore((s) => s.setBreakpoint)
   const saveState = useEditorStore((s) => s.saveState)
@@ -73,6 +76,11 @@ export function EditorShell() {
   const markError = useEditorStore((s) => s.markError)
 
   const [dragLabel, setDragLabel] = useState<string | null>(null)
+  const [chatOpen, setChatOpen] = useState(false)
+
+  const mutationTick = useChatStore((s) => s.mutationTick)
+  const agentStreaming = useChatStore((s) => s.streaming)
+  const replaceTree = useEditorStore((s) => s.replaceTree)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
@@ -150,6 +158,34 @@ export function EditorShell() {
     }, 800)
     return () => clearTimeout(timer)
   }, [tree, saveState, siteId, page, markSaving, markSaved, markError])
+
+  // Agent mutations stream in → pull the changed tree into the editor store.
+  // zundo snapshots every tree set, so agent edits are ordinary undo steps.
+  useEffect(() => {
+    if (mutationTick === 0) return
+    const timer = setTimeout(() => {
+      const { tree: current, saveState } = useEditorStore.getState()
+      const currentPageId = page?.id
+      if (
+        current === null ||
+        currentPageId === undefined ||
+        saveState === "dirty" // local work in flight — next tick will retry
+      ) {
+        return
+      }
+      void getPageTree(siteId!, currentPageId)
+        .then((envelope) => {
+          const fresh = envelope.tree as ComponentInstance | null
+          if (fresh !== null) replaceTree(fresh)
+        })
+        .catch(() => {
+          /* transient; the next tick or run_completed retries */
+        })
+      void reloadPages()
+    }, 250)
+    return () => clearTimeout(timer)
+    // page?.id intentionally read fresh via getState-like closure (page prop)
+  }, [mutationTick, siteId, page?.id, replaceTree, reloadPages])
 
   // Keyboard: undo/redo outside of form fields.
   useEffect(() => {
@@ -304,12 +340,15 @@ export function EditorShell() {
           <Badge variant="secondary" className="hidden lg:inline-flex">
             Draft
           </Badge>
+          {agentStreaming && (
+            <Badge className="animate-pulse">Agent editing…</Badge>
+          )}
           <Button
             variant="outline"
             size="sm"
-            nativeButton={false}
-            render={<Link to={`/sites/${siteId}/generate`} />}
-            title="Open the agent chat for this site"
+            aria-pressed={chatOpen}
+            onClick={() => setChatOpen((open) => !open)}
+            title="Toggle the agent chat panel"
           >
             <MessageSquareIcon data-icon="inline-start" />
             Chat
@@ -341,6 +380,27 @@ export function EditorShell() {
             page={page}
             onSaved={() => void reloadPages()}
           />
+          {chatOpen && (
+            <ChatDock
+              site={site}
+              page={page}
+              selection={
+                selectedId !== null && tree !== null && selectedId !== tree.id
+                  ? { page: page.id, node: selectedId }
+                  : null
+              }
+              selectionNodeLabel={
+                selectedId !== null && tree !== null
+                  ? (() => {
+                      const node = findTreeNode(tree, selectedId)
+                      if (node === null || node.id === tree.id) return null
+                      return CATALOG_NAME(node.component)
+                    })()
+                  : null
+              }
+              onClose={() => setChatOpen(false)}
+            />
+          )}
         </div>
         <DragOverlay>
           {dragLabel !== null ? (
@@ -354,6 +414,6 @@ export function EditorShell() {
   )
 }
 
-function CATALOG_NAME(component: string): string | undefined {
-  return CATALOG.find((entry) => entry.name === component)?.display_name
+function CATALOG_NAME(component: string): string | null {
+  return CATALOG.find((entry) => entry.name === component)?.display_name ?? null
 }

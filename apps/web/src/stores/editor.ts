@@ -13,6 +13,9 @@ interface EditorState {
   saveState: SaveState
 
   bootstrap: (tree: ComponentInstance) => void
+  /** Swap in a server-side tree (agent run finished, revert, …) as an
+   *  ordinary history entry — undo restores the pre-agent tree. */
+  replaceTree: (tree: ComponentInstance) => void
   select: (nodeId: string | null) => void
   setBreakpoint: (bp: Breakpoint) => void
   markSaved: () => void
@@ -92,6 +95,13 @@ export const useEditorStore = create<EditorState>()(
       saveState: "saved",
 
       bootstrap: (tree) => set({ tree, selectedId: null, saveState: "saved" }),
+
+      replaceTree: (tree) =>
+        set(({ tree: current }) => {
+          // Same content → skip (no history noise, no phantom autosave).
+          if (current !== null && JSON.stringify(current) === JSON.stringify(tree)) return {}
+          return { tree, saveState: "dirty" }
+        }),
       select: (nodeId) => set({ selectedId: nodeId }),
       setBreakpoint: (breakpoint) => set({ breakpoint }),
       markSaved: () => set({ saveState: "saved" }),

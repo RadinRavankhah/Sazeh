@@ -11,6 +11,7 @@ import {
   updateSession,
   type AgentMessageResource,
   type AgentSessionResource,
+  type MessageSelection,
 } from "@/lib/agent"
 
 export interface ToolActivity {
@@ -19,6 +20,9 @@ export interface ToolActivity {
   status: "running" | "succeeded" | "failed"
   error?: string
 }
+
+/** Tools that change site content — the editor listens for these. */
+export const MUTATING_TOOLS = new Set(["patch_page_tree", "create_page", "set_site_theme"])
 
 interface ChatState {
   sessions: AgentSessionResource[]
@@ -31,6 +35,9 @@ interface ChatState {
   activity: ToolActivity[]
   lastRunId: string | null
   lastRunMutated: boolean
+  /** Bumped whenever the agent (or a revert) changes site content — the
+   *  editor refetches the tree on change instead of polling. */
+  mutationTick: number
   sessionsLoading: boolean
   messagesLoading: boolean
 
@@ -39,7 +46,7 @@ interface ChatState {
   selectSession: (sessionId: string) => Promise<void>
   setPages: (pages: { id: string; title: string; slug?: string }[]) => void
   switchPage: (pageId: string) => Promise<void>
-  send: (siteId: string, content: string) => Promise<void>
+  send: (siteId: string, content: string, selection?: MessageSelection | null) => Promise<void>
   cancel: () => Promise<void>
   revertLastRun: () => Promise<void>
 }
@@ -57,6 +64,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   activity: [],
   lastRunId: null,
   lastRunMutated: false,
+  mutationTick: 0,
   sessionsLoading: true,
   messagesLoading: false,
 
@@ -117,7 +125,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  send: async (siteId, content) => {
+  send: async (siteId, content, selection) => {
     const {
       activeSessionId,
       focusedPageId,
@@ -144,7 +152,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     let runId: string
     try {
-      const result = await postMessage(sessionId, content, focusedPageId)
+      const result = await postMessage(sessionId, content, focusedPageId, selection)
       runId = result.run.id
       set((state) => ({
         messages: state.messages.map((m) =>
@@ -183,8 +191,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
             break
           }
         }
-        const mutated = data.tool_name === "patch_page_tree" || data.tool_name === "set_site_theme"
-        return { activity, lastRunMutated: state.lastRunMutated || (status === "succeeded" && mutated) }
+        const mutated = data.tool_name === "patch_page_tree" || data.tool_name === "set_site_theme" || data.tool_name === "create_page"
+        const tick = status === "succeeded" && mutated ? state.mutationTick + 1 : state.mutationTick
+        return {
+          activity,
+          mutationTick: tick,
+          lastRunMutated: state.lastRunMutated || (status === "succeeded" && mutated),
+        }
       })
     }
     source.addEventListener("tool_started", trackTool("running") as EventListener)
@@ -208,12 +221,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
       source.close()
       void (async () => {
         const messages = (await listMessages(sessionId!)) ?? []
-        set({
+        set((state) => ({
           messages,
           streaming: false,
           draft: "",
           activity: [],
-        })
+          // Final tick — the editor refetches the tree even if it missed
+          // intermediate tool events.
+          mutationTick: state.lastRunMutated
+            ? state.mutationTick + 1
+            : state.mutationTick,
+        }))
       })()
     })
   },
@@ -231,6 +249,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (runId === null || sessionId === null || get().streaming) return
     await revertRun(runId)
     const messages = await listMessages(sessionId)
-    set({ messages })
+    set((state) => ({
+      messages,
+      // A revert changes the tree server-side — the editor must refetch.
+      mutationTick: state.mutationTick + 1,
+    }))
   },
 }))

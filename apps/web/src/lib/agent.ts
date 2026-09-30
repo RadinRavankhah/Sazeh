@@ -60,16 +60,24 @@ export async function listMessages(sessionId: string): Promise<AgentMessageResou
   return api<AgentMessageResource[]>(`/api/v1/agent/sessions/${sessionId}/messages/`)
 }
 
+/** D6.1: the element selected in the editor when the message was sent. */
+export interface MessageSelection {
+  page: string
+  node: string
+}
+
 export async function postMessage(
   sessionId: string,
   content: string,
   pageId?: string | null,
+  selection?: MessageSelection | null,
 ): Promise<{ message: AgentMessageResource; run: AgentRunResource }> {
   return api(`/api/v1/agent/sessions/${sessionId}/messages/`, {
     method: "POST",
     body: JSON.stringify({
       content,
       page: pageId ?? undefined,
+      selection: selection ?? undefined,
     }),
   })
 }
