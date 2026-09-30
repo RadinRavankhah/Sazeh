@@ -104,6 +104,16 @@ export function LoginPage() {
       </form>
 
       <p className="text-sm text-muted-foreground">
+        Forgot your password?{" "}
+        <Link
+          to="/forgot-password"
+          className="font-medium text-foreground underline underline-offset-4"
+        >
+          Reset it
+        </Link>
+      </p>
+
+      <p className="text-sm text-muted-foreground">
         New to Sazeh?{" "}
         <Link to="/signup" className="font-medium text-foreground underline underline-offset-4">
           Create an account

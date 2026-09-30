@@ -56,6 +56,10 @@ class _Settings(BaseSettings):
     # Logging (console verbosity; empty = DEBUG in dev, INFO in prod)
     LOG_LEVEL: str = ""
 
+    # Email (empty = console backend in dev, SMTP in prod)
+    EMAIL_BACKEND: str = ""
+    DEFAULT_FROM_EMAIL: str = "Sazeh <noreply@sazeh.local>"
+
 
 _env = _Settings()
 
@@ -202,6 +206,14 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 SESSION_COOKIE_SAMESITE = "Lax"
+
+# Email: console backend in dev (reset emails print to the runserver
+# terminal); override with the env for real SMTP in prod.
+EMAIL_BACKEND = _env.EMAIL_BACKEND or (
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend"
+)
 
 # ---------------------------------------------------------------------------
 # 5. Redis / Cache

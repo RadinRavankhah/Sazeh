@@ -57,3 +57,11 @@ export function login(email: string, password: string): Promise<unknown> {
 export async function logout(): Promise<void> {
   await api("/_allauth/browser/v1/auth/session", { method: "DELETE" })
 }
+
+export function requestPasswordReset(email: string): Promise<unknown> {
+  return flow("/_allauth/browser/v1/auth/password/request", { email })
+}
+
+export function resetPassword(key: string, password: string): Promise<unknown> {
+  return flow("/_allauth/browser/v1/auth/password/reset", { key, password })
+}
