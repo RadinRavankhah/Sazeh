@@ -630,13 +630,13 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 > (a) Yes — selection context is a core differentiator, ship in v1
 > (b) Later — plain chat first.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(a) Ship at launch.** The editor tracks selection (Phase 4); the messages API accepts `selection: {page, node}` and the context builder injects the selected subtree so "make THIS darker" resolves.
 
 > **[DECISION NEEDED] D6.2 — Version history scope.**
 > (a) Per-agent-run snapshots with restore only
 > (b) Full version history panel (named versions, diff view, any-point restore) — bigger scope, big trust win.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(a) Per-agent-run snapshots with restore only.** Already shipped (ToolRun snapshots + revert endpoint + UI button). A full version panel (named versions/diff/any-point restore) can come later; credit preview defers to Phase 9.
 
 ---
 
@@ -791,8 +791,8 @@ All `[DECISION NEEDED]` blocks, in one place. Fill in answers here or inline in 
 | D5.3 | 5 | Conversation scope | **(c) Per-site chats with page-context switching** |
 | D5.4 | 5 | Run budgets (iterations/tokens) | **25 turns / 100k total / 32k output / 2 self-heal / 300s wall — env `AGENT_*`** |
 | D5.5 | 5 | Orchestrator implementation | **Hand-rolled loop + OpenAI SDK + structlog; "RAG" = agentic retrieval over the registry** |
-| D6.1 | 6 | Selection-aware chat | _(pending)_ |
-| D6.2 | 6 | Version history scope | _(pending)_ |
+| D6.1 | 6 | Selection-aware chat | **(a) Ship at launch — selection injected into message context** |
+| D6.2 | 6 | Version history scope | **(a) Per-agent-run snapshots with restore only** |
 | D7.1 | 7 | Published-site URL scheme | _(pending)_ |
 | D7.2 | 7 | SEO posture: CSR vs SSG at launch | _(pending)_ |
 | D7.3 | 7 | Publish bundle retention | _(pending)_ |
