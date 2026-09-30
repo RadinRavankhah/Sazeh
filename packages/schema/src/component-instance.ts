@@ -14,6 +14,8 @@ export interface PageResource {
   title: string;
   slug: string;
   status: "draft" | "published";
+  meta_title: string;
+  meta_description: string;
   tree: ComponentInstance | null;
   parent: string | null;
   order: number;

@@ -4,6 +4,7 @@ import { RedirectIfAuthenticated, RequireAuth } from "@/components/RouteGuards"
 import { AuthLayout } from "@/layouts/AuthLayout"
 import { AppShell } from "@/layouts/AppShell"
 import { DashboardPage } from "@/pages/DashboardPage"
+import { EditorShell } from "@/editor/EditorShell"
 import { GeneratePage } from "@/pages/GeneratePage"
 import { SitePreviewPage } from "@/pages/SitePreviewPage"
 import { SiteSettingsPage } from "@/pages/SiteSettingsPage"
@@ -28,6 +29,8 @@ export default function App() {
           </Route>
           {/* The preview is full-bleed — no dashboard chrome or padding. */}
           <Route path="sites/:siteId/preview" element={<SitePreviewPage />} />
+          {/* The editor is full-bleed too; pageId is optional (defaults to Home). */}
+          <Route path="sites/:siteId/edit/:pageId?" element={<EditorShell />} />
         </Route>
         <Route path="*" element={<AuthLayout />}>
           <Route path="*" element={<LoginPage />} />

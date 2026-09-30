@@ -3,6 +3,7 @@ import { useNavigate } from "react-router"
 import {
   EyeIcon,
   MoreHorizontalIcon,
+  MousePointerClickIcon,
   PencilIcon,
   PlusIcon,
   SparklesIcon,
@@ -78,6 +79,9 @@ function SiteCard({ site }: { site: SiteResource }) {
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/generate`)}>
                 <SparklesIcon /> Build with agent
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/edit`)}>
+                <MousePointerClickIcon /> Edit in visual editor
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/preview`)}>
                 <EyeIcon /> Preview
