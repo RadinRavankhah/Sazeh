@@ -546,17 +546,17 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 > **[DECISION NEEDED] D4.1 — Inline text editing on canvas?**
 > Double-click-a-headline-to-edit inline (Squarespace-like, adds significant complexity) vs inspector-only editing for MVP.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **Inspector-only for MVP** — all prop editing happens in the schema-driven inspector; inline canvas text editing (contentEditable syncing into the tree) is a post-MVP enhancement that doesn't block the core build loop.
 
 > **[DECISION NEEDED] D4.2 — Breakpoint preview scope.**
 > (a) Desktop canvas only at launch; (b) desktop + mobile preview toggles (read-only scaling); (c) per-breakpoint prop overrides in the schema model (big data-model change — needs registry schema support).
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **(b) Desktop + mobile preview toggles (read-only scaling).** The canvas renders at fixed widths through the existing renderer; per-breakpoint prop overrides (c) are deferred — they need registry schema support.
 
 > **[DECISION NEEDED] D4.3 — Primary editor user.**
 > Carried from v1 §14: non-technical founder (needs more guidance copy, guarded defaults) vs semi-technical builder (denser UI, more control). Shapes inspector labels, palette descriptions, empty states.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** **Non-technical founder** — matches the Phase 4 exit criterion ("a non-technical user can, without docs…"): guidance copy, guarded defaults from registry `default_props`, friendly inspector labels.
 
 ---
 
@@ -783,13 +783,14 @@ All `[DECISION NEEDED]` blocks, in one place. Fill in answers here or inline in 
 | D2.2 | 2 | Theme token granularity | **(b) Extended: accent/font/radius/heading-scale + section background variants** |
 | D3.1 | 3 | OAuth providers | **(a) Email/password only at launch** |
 | D3.2 | 3 | SPA auth: session vs JWT | **(c) Sessions now (HttpOnly cookies), JWT with the public API later** |
-| D4.1 | 4 | Inline text editing on canvas | _(pending)_ |
-| D4.2 | 4 | Breakpoint preview scope | _(pending)_ |
-| D4.3 | 4 | Primary editor user | _(pending)_ |
-| D5.1 | 5 | Agent autonomy: apply vs approve | _(pending)_ |
-| D5.2 | 5 | Streaming transport: SSE vs WS | _(pending)_ |
-| D5.3 | 5 | Conversation scope | _(pending)_ |
-| D5.4 | 5 | Run budgets (iterations/tokens) | _(pending)_ |
+| D4.1 | 4 | Inline text editing on canvas | **Inspector-only for MVP** |
+| D4.2 | 4 | Breakpoint preview scope | **(b) Desktop + mobile preview toggles (read-only scaling)** |
+| D4.3 | 4 | Primary editor user | **Non-technical founder** |
+| D5.1 | 5 | Agent autonomy: apply vs approve | **(a) Direct apply + mandatory revert (ToolRun snapshots)** |
+| D5.2 | 5 | Streaming transport: SSE vs WS | **(a) SSE — loop drives the stream; terminal-run replay on reconnect** |
+| D5.3 | 5 | Conversation scope | **(c) Per-site chats with page-context switching** |
+| D5.4 | 5 | Run budgets (iterations/tokens) | **25 turns / 100k total / 32k output / 2 self-heal / 300s wall — env `AGENT_*`** |
+| D5.5 | 5 | Orchestrator implementation | **Hand-rolled loop + OpenAI SDK + structlog; "RAG" = agentic retrieval over the registry** |
 | D6.1 | 6 | Selection-aware chat | _(pending)_ |
 | D6.2 | 6 | Version history scope | _(pending)_ |
 | D7.1 | 7 | Published-site URL scheme | _(pending)_ |
