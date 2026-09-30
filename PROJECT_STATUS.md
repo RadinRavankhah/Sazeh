@@ -1,7 +1,7 @@
 # Sazeh — Project Status
 
-**Last updated:** 2026-09-28 (post-repair baseline)
-**Scope:** backend audit + full repair pass; all quality gates green.
+**Last updated:** 2026-09-30 (Phase 4 visual editor)
+**Scope:** agent core + chat UI complete; visual editor (manual mode) built; 108 backend tests green.
 
 ---
 
@@ -33,7 +33,7 @@ This document was first written after an audit that found the project unable to 
 | `manage.py check` | clean |
 | `ruff check .` | clean |
 | `mypy .` | clean (53 files) |
-| `pytest` | **52 passed** (tree engine, validator, tenancy/IDOR regressions, roles, signals, headless auth flow) |
+| `pytest` | **108 passed** (tree engine, validator, tenancy/IDOR regressions, roles, signals, headless auth flow, sites API, agent loop/tools/API) |
 | `tsc -b` / `vite build` (apps/web) | clean (chunk >500 kB warning — code-split later) |
 | Boot smoke | migrate OK; `/admin/login/` → 200; `/api/v1/me/` → 403 unauthenticated |
 | CI | `.github/workflows/backend.yml` — ruff + mypy + check + pytest on Postgres 16 |
@@ -87,8 +87,8 @@ Findings from the audit → what was done:
 | 1 — Accounts & Data Layer | 🟢 done | Models, migrations, signals, tenancy, admin, tests |
 | 2 — Registry & Engine | 🟢 done | Launch catalog (9 composites + 6 primitives, D2.1) seeded with example payloads; schemas Draft-07 with `additionalProperties: false`; `example_payload` field; theme tokens (D2.2, `apps/sites/theme.py`); `packages/schema` strict TS types; **React `ComponentRenderer`/`PageRenderer` + `COMPONENT_MAP` (all 15 components) + read-only preview harness** (Phase 2 tasks 5–6). Generator bug fixed: array-of-objects props now emit as arrays |
 | 3 — Auth & Dashboard | 🟢 ~90% | **Pass 1 done:** allauth headless (`/_allauth/browser/v1/*`) behind session cookies (D3.2, D3.1 email/password only — email verification deferred, `ACCOUNT_EMAIL_VERIFICATION=none`); `/api/v1/me/` returns `default_workspace`; SPA login/signup/logout with React Hook Form + Zod; route guards + auth store. **Pass 2 done:** sites grid (create/rename/delete, live slug, empty states), post-create redirect → `/sites/:id/generate` (D0.1) with honest "agent arrives in Phase 5" stub + example-page seeder, theme token editor (first D2.2 consumer, Zod mirroring `theme.py`, server-side backstop in `SiteSerializer`), full-bleed draft preview with scoped site-theme CSS vars. **Remaining:** password-reset flow, dashboard polish |
-| 4 — Visual Editor | 🟠 in progress | **D4.1–D4.3 decided:** inspector-only editing (no inline canvas text for MVP), desktop+mobile read-only preview toggle, non-technical founder as primary user. Reuses Pass 2 renderer |
-| 5 — Agent Core | 🟢 done (backend) | **D5.1–D5.5 decided (see plan §14).** Hand-rolled orchestrator loop (`apps/agent/orchestrator.py`): per-session Redis lock, budgets at turn boundaries (25 turns / 100k total / 32k output / 2 self-heal / 300s wall — env `AGENT_*`), cooperative cancel, incremental counters, ToolRun snapshots, graceful exhaustion. OpenAI-SDK adapter (D0.2, env-configured) + scripted `FakeLLM` for tests. 6 tools over the service layer; context builder = agentic retrieval (compact catalog / get_component / tree summaries). REST: sessions CRUD + messages, SSE `/agent/runs/{id}/events/` (loop drives the stream), cancel, revert. `AgentRun` model + `apps/usage.UsageEvent` metering. structlog JSON logging (run-scoped). 102 backend tests |
+| 4 — Visual Editor | 🟢 built | **D4.1–D4.3 decided:** inspector-only editing (no inline canvas text for MVP), desktop+mobile read-only preview toggle, non-technical founder as primary user. Three-panel editor at `/sites/:id/edit/:pageId?`: pages rail, searchable palette (dnd-kit drag or click-to-append), canvas with section selection/drag/chrome reusing `ComponentRenderer` via an opt-in `decorateChildren` hook, schema-driven inspector (RHF forms generated from registry JSON Schemas, array-of-objects lists, layers outline), page settings with SEO fields, debounced autosave + zundo undo/redo, breakpoint width toggle. Backend: subtree `insert` op (server reassigns ids recursively — duplicate/paste), `meta_title`/`meta_description` on Page. Pending: real-user manual test |
+| 5 — Agent Core | 🟢 done (backend) | **D5.1–D5.5 decided (see plan §14).** Hand-rolled orchestrator loop (`apps/agent/orchestrator.py`): per-session Redis lock, budgets at turn boundaries (25 turns / 100k total / 32k output / 2 self-heal / 300s wall — env `AGENT_*`), cooperative cancel, incremental counters, ToolRun snapshots, graceful exhaustion. OpenAI-SDK adapter (D0.2, env-configured) + scripted `FakeLLM` for tests. 6 tools over the service layer; context builder = agentic retrieval (compact catalog / get_component / tree summaries). REST: sessions CRUD + messages, SSE `/agent/runs/{id}/events/` (loop drives the stream), cancel, revert. `AgentRun` model + `apps/usage.UsageEvent` metering. structlog JSON logging (run-scoped). 102 backend tests (108 total with the editor suite) |
 | 6 — Agent UX | 🟠 ~40% | **Chat UI live:** per-site chat page (`/sites/:id/generate`) with sessions side menu (new chat, auto-title, resume), streaming text, tool activity feed, focused-page switcher, Stop + "Restore to before this run" actions, starter prompts, example-page seeder for key-less demos. Remaining: canvas integration (Phase 4), selection-aware messages (D6.1), named-version history (D6.2), credit preview (Phase 9) |
 | 7–10 | 🔴 0% | Publishing, media/templates, billing, hardening |
 
@@ -102,8 +102,8 @@ The plan's "parse `/shadcn/*.md` into schemas" pipeline was realized as **hand-c
 
 ## 5. Next Steps (recommended order)
 
-1. **Build Phase 4 visual editor** (D4.1–D4.3 decided): three-panel layout reusing `ComponentRenderer`, Zustand+zundo tree store, @dnd-kit palette/canvas, schema-driven inspector, debounced autosave via `tree/patch`; agent chat then docks into the editor (completes Phase 6).
-2. **Phase 5/6 polish from real usage:** tune system prompt + budgets off `ToolRun`/`UsageEvent` data (queryable in admin); context-length trimming is the first known refinement point.
+1. **Dock the agent chat into the editor** (completes Phase 6): the chat panel becomes a fourth pane in the editor shell; selection-aware messages (D6.1) and named-version history (D6.2) decide the remaining scope.
+2. **Phase 4/5 polish from real usage:** tune system prompt + budgets off `ToolRun`/`UsageEvent` data (queryable in admin); context-length trimming is the first known refinement point; editor usability pass after a real user runs through the exit criterion.
 3. **Phase 3 remainder:** password-reset flow + dashboard polish (can slot in any time).
 
 ---
@@ -124,3 +124,16 @@ The plan's "parse `/shadcn/*.md` into schemas" pipeline was realized as **hand-c
 - **Workflow in one line:** message → `AgentRun` (pending) → SSE connect acquires the session lock and drives the loop → per turn: assemble context (system prompt + compact catalog + site overview + focused tree + trimmed history) → stream LLM → execute tool calls against the service layer (validated; snapshot into `ToolRun`) → feed results back → final message + `UsageEvent`. Termination: done / cancelled / failed / budget_exhausted — all with a persisted assistant summary.
 - **Glossary:** chat=session, run=one send→reply unit of work, turn=one LLM round-trip (cap counts these), tool call=one requested action (audit: `ToolRun`), event=one SSE tick. See `apps/agent/orchestrator.py` module docstring for invariants.
 - **Analyzability:** full prompts/responses/tool args live in DB rows (admin-browsable), log files carry only ids/statuses/latencies — future tuning is SQL over `ToolRun`/`UsageEvent`/`AgentRun`.
+
+---
+
+## 8. Pass 4 implementation notes (2026-09-30)
+
+- **D4 answers:** inspector-only editing (D4.1), desktop+mobile read-only width preview (D4.2), non-technical founder copy/guarded defaults (D4.3) — recorded in plan §14.
+- **Editor store (`stores/editor.ts`):** Zustand + zundo temporal middleware tracking the tree only (`partialize` + JSON equality so save-state churn never pollutes history, limit 64). All mutations are pure structural copies guarded by a no-op check. `replaceProps` (inspector) vs `updateProps` (merge) — the inspector owns the full prop set so cleared optional fields actually clear.
+- **Autosave is full-tree PATCH, not op streaming:** the plan's `tree/patch`-per-edit design fights undo/redo (restored snapshots no longer know their ops). The editor debounces 800ms and PATCHes the whole tree through `PageViewSet` (validated server-side); undo/redo is just another tree change. The op endpoint remains the agent's write path; conflict semantics are last-write-wins either way.
+- **Renderer stays preview-clean:** `ComponentRenderer`/`PageRenderer` gained an optional `decorateChildren` hook — the canvas wraps the root's direct children in selection chrome (click-catcher button above the rendered component so links don't navigate, hover/selected rings, drag handle chip, move/duplicate/delete controls). Nested blocks are selected from the inspector's layers outline, dodging layout-breaking wrappers on every node.
+- **DnD:** @dnd-kit with a 6px activation distance; palette items drag onto interleave slots (`slot:{index}` droppables) or click to append; sections drag by their chip with move-index shift math (remove-then-insert). DragOverlay shows a labeled card, not a live component.
+- **Inspector forms:** generated from the registry's Draft-07 schemas — string (textarea when maxLength > 80), enum (Base UI Select, unset enums omitted from saves), number (`valueAsNumber`), uri, boolean (native checkbox), array-of-objects (`useFieldArray` one level deep; nested arrays like footer columns → links round-trip as JSON textareas). `blankItem()` seeds new items from sub-schemas.
+- **Backend:** `insert` ops may carry a `children` subtree — `TreePatcher._materialize_subtree` reassigns ids recursively (client ids ignored; duplicate can't collide with the original) and `validate_tree` re-checks the whole result. `Page.meta_title`/`meta_description` added (migration `0002`), exposed in `PageSerializer` and edited from the inspector's page settings.
+- **Deps:** `@dnd-kit/core`, `@dnd-kit/sortable`, `zundo` on the frontend. `generate.mjs` note: the emitted types live inside a template literal — no backticks in comments there (it broke once already).
