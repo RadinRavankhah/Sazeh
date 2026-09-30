@@ -96,7 +96,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         Promise.resolve(get().sessions),
       ])
       const session = sessions.find((s) => s.id === sessionId)
-      set({ messages, focusedPageId: session?.page ?? null, messagesLoading: false })
+      set({ messages: messages ?? [], focusedPageId: session?.page ?? null, messagesLoading: false })
     } catch {
       set({ messagesLoading: false })
     }
@@ -164,7 +164,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       throw error
     }
 
-    const source = new EventSource(runEventsUrl(runId))
+    const source = new EventSource(runEventsUrl(runId), { withCredentials: true })
     source.addEventListener("message_delta", (event) => {
       const delta = JSON.parse((event as MessageEvent).data) as { text: string }
       set((state) => ({ draft: state.draft + delta.text }))
@@ -207,7 +207,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     source.addEventListener("run_completed", () => {
       source.close()
       void (async () => {
-        const messages = await listMessages(sessionId!)
+        const messages = (await listMessages(sessionId!)) ?? []
         set({
           messages,
           streaming: false,

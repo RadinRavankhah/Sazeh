@@ -71,7 +71,7 @@ export function SitePreviewPage() {
       <div className="grid min-h-dvh place-items-center bg-background px-6 text-center">
         <div className="flex flex-col items-center gap-4">
           <p className="text-muted-foreground">{error}</p>
-          <Button variant="outline" render={<Link to="/" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
             Back to dashboard
           </Button>
         </div>
@@ -82,7 +82,7 @@ export function SitePreviewPage() {
   return (
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-40 flex h-12 items-center justify-between border-b bg-background/90 px-4 backdrop-blur">
-        <Button variant="ghost" size="sm" render={<Link to="/" />}>
+        <Button variant="ghost" size="sm" nativeButton={false} render={<Link to="/" />}>
           <ArrowLeftIcon data-icon="inline-start" />
           Dashboard
         </Button>

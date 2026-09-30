@@ -104,7 +104,7 @@ export function SiteSettingsPage() {
     return (
       <div className="flex flex-col items-center gap-4 py-24 text-center">
         <p className="text-muted-foreground">This site doesn’t exist or you don’t have access.</p>
-        <Button variant="outline" render={<Link to="/" />}>
+        <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
           Back to dashboard
         </Button>
       </div>

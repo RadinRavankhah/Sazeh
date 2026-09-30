@@ -1,4 +1,4 @@
-import { api } from "./api"
+import { api, apiBase } from "./api"
 
 export interface AgentSessionResource {
   id: string
@@ -55,11 +55,9 @@ export async function updateSession(
   })
 }
 
+/** History for a session — returned as a bare JSON array (not paginated). */
 export async function listMessages(sessionId: string): Promise<AgentMessageResource[]> {
-  const page = await api<{ count: number; results: AgentMessageResource[] }>(
-    `/api/v1/agent/sessions/${sessionId}/messages/`,
-  )
-  return page.results
+  return api<AgentMessageResource[]>(`/api/v1/agent/sessions/${sessionId}/messages/`)
 }
 
 export async function postMessage(
@@ -88,7 +86,7 @@ export async function revertRun(
   return api(`/api/v1/agent/runs/${runId}/revert/`, { method: "POST" })
 }
 
-/** SSE stream of a run's events (same-origin: cookies ride along). */
+/** SSE stream of a run's events (absolute: EventSource must reach Django, not Vite). */
 export function runEventsUrl(runId: string): string {
-  return `/api/v1/agent/runs/${runId}/events/`
+  return `${apiBase}/api/v1/agent/runs/${runId}/events/`
 }

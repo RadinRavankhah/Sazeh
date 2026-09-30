@@ -106,6 +106,7 @@ function ButtonComponent({ node }: NodeProps) {
     <Button
       size={p.size === "md" ? "default" : (p.size ?? "default")}
       variant={variant}
+      nativeButton={false}
       render={
         <a href={p.url ?? "#"} target={p.open_in_new_tab ? "_blank" : undefined} rel={p.open_in_new_tab ? "noreferrer" : undefined} />
       }
@@ -184,7 +185,7 @@ function NavBarComponent({ node }: NodeProps) {
           ))}
         </nav>
         {p.cta_text && (
-          <Button render={<a href={p.cta_href ?? "#"} />}>{p.cta_text}</Button>
+          <Button nativeButton={false} render={<a href={p.cta_href ?? "#"} />}>{p.cta_text}</Button>
         )}
       </div>
     </header>
@@ -231,9 +232,9 @@ function HeroSectionComponent({ node }: NodeProps) {
         <h1 className="max-w-3xl font-bold tracking-tight">{p.headline}</h1>
         {p.subheadline && <p className="max-w-2xl text-lg text-muted-foreground">{p.subheadline}</p>}
         <div className={cn("flex flex-wrap gap-3", align === "center" && "justify-center")}>
-          <Button size="lg" render={<a href={p.cta_href} />}>{p.cta_text}</Button>
+          <Button size="lg" nativeButton={false} render={<a href={p.cta_href} />}>{p.cta_text}</Button>
           {p.secondary_cta_text && (
-            <Button size="lg" variant="outline" render={<a href={p.secondary_cta_href ?? "#"} />}>
+            <Button size="lg" variant="outline" nativeButton={false} render={<a href={p.secondary_cta_href ?? "#"} />}>
               {p.secondary_cta_text}
             </Button>
           )}
@@ -302,6 +303,7 @@ function CtaBannerComponent({ node }: NodeProps) {
           size="lg"
           variant={p.background === "accent" ? "secondary" : "default"}
           render={<a href={p.cta_href} />}
+          nativeButton={false}
         >
           {p.cta_text}
         </Button>
@@ -405,6 +407,7 @@ function PricingTableComponent({ node }: NodeProps) {
                 className="mt-6 w-full"
                 variant={plan.highlighted ? "default" : "outline"}
                 render={<a href={plan.cta_href} />}
+                nativeButton={false}
               >
                 {plan.cta_text}
               </Button>

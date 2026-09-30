@@ -323,7 +323,7 @@ export function GeneratePage() {
     return (
       <div className="flex flex-col items-center gap-4 py-24 text-center">
         <p className="text-muted-foreground">This site doesn’t exist or you don’t have access.</p>
-        <Button variant="outline" render={<Link to="/" />}>
+        <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
           Back to dashboard
         </Button>
       </div>
@@ -345,7 +345,7 @@ export function GeneratePage() {
       <div className="flex min-h-[70dvh] flex-1 flex-col">
         <header className="flex items-center justify-between gap-4 border-b pb-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon-sm" render={<Link to="/" />}>
+            <Button variant="ghost" size="icon-sm" nativeButton={false} render={<Link to="/" />}>
               <ArrowLeftIcon />
             </Button>
             <Select value={focusedPageId} onValueChange={(v) => void switchPage(v as string)}>
@@ -363,7 +363,7 @@ export function GeneratePage() {
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary">Agent chat</Badge>
-            <Button variant="ghost" size="sm" render={<Link to={`/sites/${siteId}/preview`} />}>
+            <Button variant="ghost" size="sm" nativeButton={false} render={<Link to={`/sites/${siteId}/preview`} />}>
               <EyeIcon data-icon="inline-start" />
               Preview
             </Button>
