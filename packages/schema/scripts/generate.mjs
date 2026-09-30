@@ -127,10 +127,12 @@ export interface RegistryEntry<P = Record<string, unknown>> {
   example_payload: P | null;
 }
 
-/** Atomic tree patch operations — must match backend apps/sites/tree.py */
+/** Atomic tree patch operations — must match backend apps/sites/tree.py.
+ *  "insert" may carry a children subtree (duplicate/paste): the server
+ *  assigns fresh ids to every node and ignores any client ids. */
 export type TreePatchOp =
   | { op: "update_props"; node_id: string; props: Record<string, unknown> }
-  | { op: "insert"; parent_id: string; index?: number; component: string; props?: Record<string, unknown> }
+  | { op: "insert"; parent_id: string; index?: number; component: string; props?: Record<string, unknown>; children?: ComponentInstance[] }
   | { op: "delete"; node_id: string }
   | { op: "move"; node_id: string; new_parent_id: string; index?: number };
 

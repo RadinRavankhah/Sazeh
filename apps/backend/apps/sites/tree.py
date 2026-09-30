@@ -49,21 +49,47 @@ class TreePatcher:
         return tree
 
     @staticmethod
+    def _materialize_subtree(node: dict) -> dict:
+        """
+        Deep-copy a client-supplied subtree spec (duplicate/paste), assigning
+        fresh ids to *every* node — client ids are ignored (the server is the
+        id authority, so a duplicated branch can never collide with the
+        original). Structural problems raise ValueError; component/props
+        validity is enforced afterwards by validate_tree on the patched tree.
+        """
+        if not isinstance(node, dict) or not isinstance(node.get("component"), str):
+            raise ValueError("Each inserted node needs a 'component' string")
+        children = node.get("children") or []
+        if not isinstance(children, list):
+            raise ValueError("'children' must be an array")
+        return {
+            "id": str(uuid.uuid4()),
+            "component": node["component"],
+            "props": node.get("props") or {},
+            "children": [TreePatcher._materialize_subtree(c) for c in children],
+        }
+
+    @staticmethod
     def insert(tree: dict, parent_id: str, index: int | None,
-               component_name: str, props: dict | None = None) -> dict:
-        """Insert a new child node into parent_id at given index."""
+               component_name: str, props: dict | None = None,
+               children: list | None = None) -> dict:
+        """
+        Insert a new child node into parent_id at given index.
+
+        `children` (optional) is a client-supplied subtree spec (e.g. a
+        duplicated section); ids are reassigned server-side, recursively.
+        """
         parent = _find_node(tree, parent_id)
         if parent is None:
             raise ValueError(f"Parent node not found: {parent_id}")
         if "children" not in parent:
             parent["children"] = []
 
-        new_node = {
-            "id": str(uuid.uuid4()),
+        new_node = TreePatcher._materialize_subtree({
             "component": component_name,
             "props": props or {},
-            "children": [],
-        }
+            "children": children or [],
+        })
 
         if index is None or index >= len(parent["children"]):
             parent["children"].append(new_node)
@@ -114,7 +140,8 @@ class TreePatchService:
         """
         Apply a sequence of operations.  Each op has shape:
             {"op": "update_props", "node_id": "...", "props": {...}}
-            {"op": "insert", "parent_id": "...", "index": 0, "component": "Button", "props": {...}}
+            {"op": "insert", "parent_id": "...", "index": 0, "component": "Button", "props": {...},
+             "children": [{"component": "...", "props": {...}, "children": [...]}]}
             {"op": "delete", "node_id": "..."}
             {"op": "move", "node_id": "...", "new_parent_id": "...", "index": 0}
         Returns the modified tree.
@@ -133,7 +160,8 @@ class TreePatchService:
                 elif op_type == "insert":
                     patched = TreePatcher.insert(
                         patched, op["parent_id"], op.get("index"),
-                        op["component"], op.get("props", {})
+                        op["component"], op.get("props", {}),
+                        op.get("children"),
                     )
                 elif op_type == "delete":
                     patched = TreePatcher.delete(patched, op["node_id"])

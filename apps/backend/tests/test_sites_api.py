@@ -137,3 +137,65 @@ def test_site_delete(api, user_a, site_a):
     assert resp.status_code == 204
     assert not Site.objects.filter(pk=site_a.id).exists()
 
+
+# ---------------------------------------------------------------------------
+# Tree patch: subtree insert (duplicate/paste)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_tree_patch_insert_with_children_reassigns_ids(
+    api, user_a, site_a, page_a, seeded_registry,
+):
+    api.force_authenticate(user=user_a)
+    ops = [{
+        "op": "insert", "parent_id": page_a.tree["id"], "component": "Section",
+        "props": {}, "children": [
+            {"component": "Heading", "props": {"text": "Duplicated"},
+             "children": []},
+        ],
+    }]
+    resp = api.post(
+        f"{SITE_URL}{site_a.id}/pages/{page_a.id}/tree/patch/",
+        {"operations": ops}, format="json",
+    )
+    assert resp.status_code == 200
+    section = resp.data["tree"]["children"][0]
+    assert section["component"] == "Section"
+    assert section["id"] != section["children"][0]["id"]
+    assert section["children"][0]["props"]["text"] == "Duplicated"
+
+
+@pytest.mark.django_db
+def test_tree_patch_insert_subtree_unknown_component_rejected(
+    api, user_a, site_a, page_a, seeded_registry,
+):
+    """A subtree referencing a component outside the registry fails validation."""
+    api.force_authenticate(user=user_a)
+    ops = [{
+        "op": "insert", "parent_id": page_a.tree["id"], "component": "Section",
+        "children": [{"component": "Nope", "children": []}],
+    }]
+    resp = api.post(
+        f"{SITE_URL}{site_a.id}/pages/{page_a.id}/tree/patch/",
+        {"operations": ops}, format="json",
+    )
+    assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Page SEO fields
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+def test_page_patch_seo_fields(api, user_a, site_a, page_a):
+    api.force_authenticate(user=user_a)
+    resp = api.patch(
+        f"{SITE_URL}{site_a.id}/pages/{page_a.id}/",
+        {"meta_title": "Home — Sazeh", "meta_description": "Landing page"},
+        format="json",
+    )
+    assert resp.status_code == 200
+    assert resp.data["meta_title"] == "Home — Sazeh"
+    page_a.refresh_from_db()
+    assert page_a.meta_description == "Landing page"
+

@@ -49,6 +49,9 @@ class Page(models.Model):
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.DRAFT
     )
+    # Page-level SEO (Phase 4 editor, page settings panel)
+    meta_title = models.CharField(max_length=255, blank=True, default="")
+    meta_description = models.TextField(blank=True, default="")
     # The component tree — a recursive JSON structure:
     # { "component": "Section", "id": "uuid", "props": {...}, "children": [...] }
     tree = models.JSONField(default=dict)

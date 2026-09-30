@@ -54,6 +54,49 @@ def test_insert_without_index_appends_and_generates_id():
     uuid.UUID(inserted["id"])  # must be a valid uuid string
 
 
+def test_insert_with_subtree_reassigns_ids_recursively():
+    """Duplicate/paste: client ids are ignored; the server issues fresh ones
+    at every level so a duplicated branch can never collide with the original."""
+    tree = TreePatchService.apply_patch(make_tree(), [
+        {"op": "insert", "parent_id": "root", "index": 0,
+         "component": "Section", "props": {"padding": "lg"},
+         "children": [
+             {"id": "root", "component": "Heading",
+              "props": {"text": "Dup"}, "children": []},
+         ]},
+    ])
+    inserted = tree["children"][0]
+    assert inserted["id"] != "root"
+    uuid.UUID(inserted["id"])
+    child = inserted["children"][0]
+    assert child["id"] != "root"  # the client-supplied "root" id was dropped
+    uuid.UUID(child["id"])
+    assert child["props"] == {"text": "Dup"}
+
+
+def test_insert_subtree_deep_nesting_is_preserved():
+    tree = TreePatchService.apply_patch(make_tree(), [
+        {"op": "insert", "parent_id": "root", "component": "Section",
+         "children": [
+             {"component": "Section", "children": [
+                 {"component": "Button", "props": {"label": "Deep"}},
+             ]},
+         ]},
+    ])
+    inserted = tree["children"][-1]
+    deep = inserted["children"][0]["children"][0]
+    assert deep["props"] == {"label": "Deep"}
+    uuid.UUID(deep["id"])
+
+
+def test_insert_subtree_bad_shape_raises():
+    with pytest.raises(ValueError, match="children"):
+        TreePatchService.apply_patch(make_tree(), [
+            {"op": "insert", "parent_id": "root", "component": "Section",
+             "children": "nope"},
+        ])
+
+
 def test_delete_removes_node():
     tree = TreePatchService.apply_patch(make_tree(), [
         {"op": "delete", "node_id": "a1"},
