@@ -5,9 +5,9 @@ agent assemble it, or skip AI entirely and build by dragging and dropping
 components. Both paths write the same validated page-tree engine.
 
 **Status:** backend Phases 1–2 + agent core complete (tenanted core, component
-registry, validation engine, agent orchestrator with SSE runs, 108 tests);
-frontend auth + dashboard + agent chat + visual editor (drag-and-drop canvas,
-schema-driven inspector, autosave, undo/redo). See
+registry, validation engine, agent orchestrator with SSE runs, 118 tests);
+frontend auth + password reset + dashboard + agent chat + visual editor
+(drag-and-drop canvas, schema-driven inspector, autosave, undo/redo). See
 [`PROJECT_STATUS.md`](./PROJECT_STATUS.md) for the live
 scorecard and [`sazeh-dev-plan-v2.md`](./sazeh-dev-plan-v2.md) for the
 authoritative product/development plan.
@@ -138,7 +138,7 @@ npm run check        # typecheck
 Backend (from `apps/backend/`):
 
 ```bash
-python -m pytest          # 108 tests; in-memory SQLite + LocMem cache, no services needed
+python -m pytest          # 118 tests; in-memory SQLite + LocMem cache, no services needed
 ruff check .
 mypy .
 ```

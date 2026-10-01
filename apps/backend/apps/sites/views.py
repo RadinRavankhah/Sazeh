@@ -27,9 +27,7 @@ class SiteViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        write = self.action in WRITE_ACTIONS or (
-            self.action == "pages" and self.request.method == "POST"
-        )
+        write = self.action in WRITE_ACTIONS
         if write:
             return [IsWorkspaceEditorOrAbove()]
         return [IsAuthenticated()]
@@ -65,17 +63,6 @@ class SiteViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
             },
         )
 
-    @action(detail=True, methods=["get", "post"])
-    def pages(self, request, pk=None):
-        site = self.get_object()
-        if request.method == "GET":
-            qs = site.pages.all()
-            return Response(PageSerializer(qs, many=True).data)
-        serializer = PageSerializer(data={**request.data, "site": str(site.id)})
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 class PageViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
     serializer_class = PageSerializer
@@ -87,10 +74,22 @@ class PageViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        return Page.objects.filter(
-            site_id=self.kwargs.get("site_pk"),
-            site__workspace__in=self.get_member_workspaces(),
-        ).distinct()
+        # Resolve the site against the requester's memberships first: a
+        # foreign site is a 404 (tenancy floor), never an empty 200 — this is
+        # the list-route sibling of the detail routes' scoping.
+        site = get_object_or_404(
+            Site,
+            pk=self.kwargs.get("site_pk"),
+            workspace__in=self.get_member_workspaces(),
+        )
+        return Page.objects.filter(site=site)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        # Lets validate_slug scope uniqueness to this site (the site itself
+        # is resolved server-side, never taken from the body).
+        context["site_id"] = self.kwargs.get("site_pk")
+        return context
 
     def perform_create(self, serializer):
         site = get_object_or_404(

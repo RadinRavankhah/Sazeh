@@ -57,7 +57,7 @@ function SiteCard({ site }: { site: SiteResource }) {
       <CardContent className="flex flex-col gap-4 p-5">
         <button
           type="button"
-          onClick={() => navigate(`/sites/${site.id}/preview`)}
+          onClick={() => navigate(`/sites/${site.id}/edit`)}
           className="flex cursor-pointer flex-col gap-1 rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <div className="flex items-center justify-between gap-3">

@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api } from "@/lib/api"
+import { ApiError } from "@/lib/api"
 import { updatePage } from "@/lib/editor"
 import { getPageTree, listPages, type PageResource, type SiteResource } from "@/lib/sites"
 import { Canvas } from "@/editor/Canvas"
@@ -64,6 +65,7 @@ export function EditorShell() {
   const [pages, setPages] = useState<PageResource[]>([])
   const [page, setPage] = useState<PageResource | null>(null)
   const [missing, setMissing] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const tree = useEditorStore((s) => s.tree)
   const selectedId = useEditorStore((s) => s.selectedId)
@@ -124,8 +126,15 @@ export function EditorShell() {
         }
         bootstrap(loadedTree)
         useEditorStore.temporal.getState().clear()
-      } catch {
-        if (!cancelled) setMissing(true)
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(
+            error instanceof ApiError && error.status === 403
+              ? "You're logged in with a different account than the one that owns this site."
+              : "This site doesn't exist or you don't have access.",
+          )
+          setMissing(true)
+        }
       }
     }
     void load()
@@ -243,7 +252,9 @@ export function EditorShell() {
     return (
       <div className="grid min-h-dvh place-items-center bg-background px-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <p className="text-muted-foreground">This site doesn’t exist or you don’t have access.</p>
+          <p className="text-muted-foreground">
+            {loadError ?? "This site doesn't exist or you don't have access."}
+          </p>
           <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
             Back to dashboard
           </Button>

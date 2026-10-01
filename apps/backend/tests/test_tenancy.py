@@ -46,9 +46,35 @@ def test_site_detail_of_other_tenant_is_404(api, user_b, site_a):
 @pytest.mark.django_db
 def test_page_list_of_other_tenant_site_is_404(api, user_b, site_a):
     # The old code filtered by bare site_pk — this is the IDOR regression test.
+    # Regression (2026-09-30): the SiteViewSet.pages action shadowed the nested
+    # PageViewSet list and returned a bare array, breaking the SPA's preview
+    # and editor ("This site doesn't exist") even for owners. The nested list
+    # serves the collection now: paginated, membership-404 for outsiders.
     api.force_authenticate(user=user_b)
     resp = api.get(f"/api/v1/sites/{site_a.id}/pages/")
     assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_page_list_for_owner_is_paginated_envelope(api, user_a, site_a, page_a):
+    api.force_authenticate(user=user_a)
+    resp = api.get(f"/api/v1/sites/{site_a.id}/pages/")
+    assert resp.status_code == 200
+    assert resp.data["count"] == 1
+    assert resp.data["results"][0]["id"] == str(page_a.id)
+
+
+@pytest.mark.django_db
+def test_page_create_via_nested_route(api, user_a, site_a, seeded_registry):
+    api.force_authenticate(user=user_a)
+    resp = api.post(
+        f"/api/v1/sites/{site_a.id}/pages/",
+        {"title": "Pricing", "slug": "pricing",
+         "tree": {"id": "root", "component": "Section", "props": {}, "children": []}},
+        format="json",
+    )
+    assert resp.status_code == 201
+    assert resp.data["slug"] == "pricing"
 
 
 @pytest.mark.django_db

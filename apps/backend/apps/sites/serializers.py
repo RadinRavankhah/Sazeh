@@ -31,6 +31,11 @@ class SiteSerializer(serializers.ModelSerializer):
 
 
 class PageSerializer(serializers.ModelSerializer):
+    # `site` comes from the nested route (perform_create resolves it against
+    # the requester's writable workspaces) — a body value is never used, so
+    # the field is optional on input to satisfy validation only.
+    site = serializers.PrimaryKeyRelatedField(required=False, queryset=Site.objects.all())
+
     class Meta:
         model = Page
         fields = [
@@ -39,6 +44,23 @@ class PageSerializer(serializers.ModelSerializer):
             "tree", "parent", "order", "created_at", "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+        # The auto UniqueTogetherValidator demands `site` in the request body;
+        # the site is resolved *after* validation on the nested route, so
+        # per-site slug uniqueness is checked in validate_slug (with the
+        # site id injected into the serializer context by the view).
+        validators: list[object] = []
+
+    def validate_slug(self, value):
+        site_id = self.context.get("site_id")
+        if site_id is not None:
+            qs = Page.objects.filter(site_id=site_id, slug=value)
+            if self.instance is not None:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    "A page with this address already exists on this site."
+                )
+        return value
 
     def validate_tree(self, value):
         from .validators import validate_tree

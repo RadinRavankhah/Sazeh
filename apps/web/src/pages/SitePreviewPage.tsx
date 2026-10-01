@@ -8,9 +8,17 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getPageTree, listPages, type PageResource, type SiteResource } from "@/lib/sites"
-import { api } from "@/lib/api"
+import { api, ApiError } from "@/lib/api"
 import { PageRenderer } from "@/render/renderer"
 import { SiteThemeStyle } from "@/render/SiteThemeStyle"
+
+/** Reads fail with 403 when the session belongs to a different account —
+ *  that copy must not claim the site is missing. */
+function loadErrorMessage(error: unknown): string {
+  return error instanceof ApiError && error.status === 403
+    ? "You're logged in with a different account than the one that owns this site."
+    : "This site doesn't exist or you don't have access."
+}
 
 /**
  * Read-only render harness (Phase 2 tasks 5–6): renders the Home page tree
@@ -39,8 +47,8 @@ export function SitePreviewPage() {
           if (cancelled) return
           setTree((envelope.tree as ComponentInstance | null) ?? null)
         }
-      } catch {
-        if (!cancelled) setError("This site doesn’t exist or you don’t have access.")
+      } catch (error) {
+        if (!cancelled) setError(loadErrorMessage(error))
       } finally {
         if (!cancelled) setLoading(false)
       }
