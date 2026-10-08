@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { BrowserRouter, Route, Routes } from "react-router"
 
 import { RedirectIfAuthenticated, RequireAuth } from "@/components/RouteGuards"
@@ -12,8 +13,15 @@ import { SitePreviewPage } from "@/pages/SitePreviewPage"
 import { SiteSettingsPage } from "@/pages/SiteSettingsPage"
 import { LoginPage } from "@/pages/LoginPage"
 import { SignupPage } from "@/pages/SignupPage"
+import { useAuthStore } from "@/stores/auth"
 
 export default function App() {
+  // Hydrate once at startup: RequireAuth renders null while loading, so a
+  // hard reload of a protected route would otherwise hang blank forever.
+  useEffect(() => {
+    void useAuthStore.getState().hydrate()
+  }, [])
+
   return (
     <BrowserRouter>
       <Routes>

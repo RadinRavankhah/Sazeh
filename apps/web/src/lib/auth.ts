@@ -24,6 +24,7 @@ export class AuthFlowError extends Error {
 }
 
 async function flow<T>(path: string, payload: unknown): Promise<T> {
+  await ensureCsrf()
   try {
     return await api<T>(path, { method: "POST", body: JSON.stringify(payload) })
   } catch (error) {
@@ -35,6 +36,22 @@ async function flow<T>(path: string, payload: unknown): Promise<T> {
       ])
     }
     throw error
+  }
+}
+
+/**
+ * allauth's session endpoint is what sets the `csrftoken` cookie; the SPA
+ * never loads a Django template, so without this first call every auth POST
+ * 403s on a fresh browser. A 401 (anonymous) is expected and still sets it.
+ */
+let csrfPrimed = false
+async function ensureCsrf(): Promise<void> {
+  if (csrfPrimed) return
+  csrfPrimed = true
+  try {
+    await api("/_allauth/browser/v1/auth/session")
+  } catch {
+    /* anonymous 401 — the Set-Cookie still lands */
   }
 }
 

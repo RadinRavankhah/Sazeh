@@ -1,5 +1,7 @@
 import { useEffect } from "react"
 import { Navigate, Outlet, useNavigate } from "react-router"
+import { useTheme } from "next-themes"
+import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
 
 import { logout } from "@/lib/auth"
 import { useAuthStore } from "@/stores/auth"
@@ -19,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 function AppNav() {
   const navigate = useNavigate()
   const { user, clear } = useAuthStore()
+  const { setTheme } = useTheme()
 
   const email = user?.email ?? ""
   const initials = email.slice(0, 2).toUpperCase()
@@ -43,6 +46,16 @@ function AppNav() {
           <DropdownMenuLabel className="font-normal">
             <span className="block truncate text-sm">{email}</span>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setTheme("light")}>
+            <SunIcon /> Light
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("dark")}>
+            <MoonIcon /> Dark
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTheme("system")}>
+            <MonitorIcon /> System
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={async () => {

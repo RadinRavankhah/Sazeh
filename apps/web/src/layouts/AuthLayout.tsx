@@ -1,55 +1,106 @@
 import { useEffect, useState } from "react"
 import { Link, Navigate, Outlet } from "react-router"
+import { ChevronRightIcon, FileTextIcon } from "lucide-react"
 
 import { useAuthStore } from "@/stores/auth"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 /**
- * Brand panel for the auth shell — a miniature of the real editor canvas,
- * rendered from an actual page tree with actual components (no fake
- * screenshots). The one bold element; the form side stays quiet.
+ * Brand panel for the auth shell — a believable miniature of the real
+ * editor: pages, layers, a canvas with a hero mock, an inspector column.
+ * Rendered from real tokens (no fake screenshots). The one bold element;
+ * the form side stays quiet.
  */
-function EditorPreview() {
+function EditorShowcase() {
   return (
-    <Card className="w-full max-w-sm shadow-lg shadow-black/5">
-      <CardContent className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <Badge variant="secondary" className="font-mono text-xs">
-            home
-          </Badge>
-          <span className="text-xs text-muted-foreground">canvas</span>
+    <div className="w-full max-w-sm overflow-hidden rounded-xl border bg-card shadow-lg shadow-black/5">
+      {/* Window chrome */}
+      <div className="flex items-center gap-2 border-b px-3 py-2">
+        <div className="flex gap-1" aria-hidden>
+          <span className="size-2 rounded-full bg-foreground/15" />
+          <span className="size-2 rounded-full bg-foreground/15" />
+          <span className="size-2 rounded-full bg-foreground/15" />
         </div>
-        <div className="rounded-lg border bg-background p-4">
-          <p className="text-sm font-semibold tracking-tight">
-            Build your website in minutes
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Describe what you need — Sazeh builds it with you.
-          </p>
-          <div className="mt-3 flex gap-2">
-            <Button size="sm">Start building</Button>
-            <Button size="sm" variant="outline">
-              See templates
-            </Button>
-          </div>
+        <div className="ml-2 flex h-5 flex-1 items-center rounded-md bg-muted px-2 font-mono text-[10px] text-muted-foreground">
+          sazeh.dev/pottery-studio
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {["HeroSection", "FeatureGrid", "Footer"].map((name) => (
+      </div>
+
+      <div className="flex h-64">
+        {/* Pages rail */}
+        <div className="flex w-20 flex-col gap-1 border-r p-2">
+          <p className="px-1 text-[10px] font-medium text-muted-foreground">Pages</p>
+          {["Home", "About", "Pricing"].map((page, i) => (
             <div
-              key={name}
-              className="rounded-md border border-dashed px-2 py-1.5"
+              key={page}
+              className={
+                i === 0
+                  ? "flex items-center gap-1 rounded-md bg-accent px-1.5 py-1 text-[11px] font-medium text-accent-foreground"
+                  : "flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] text-muted-foreground"
+              }
             >
-              <p className="truncate font-mono text-[10px] text-muted-foreground">
-                {name}
-              </p>
+              <FileTextIcon className="size-3" />
+              {page}
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Canvas with a hero mock */}
+        <div className="editor-canvas flex-1 p-3">
+          <div className="flex h-full flex-col overflow-hidden rounded-md border bg-background">
+            <div className="flex flex-col gap-1.5 p-4">
+              <div className="h-3.5 w-4/5 rounded-sm bg-foreground/80" />
+              <div className="h-3.5 w-3/5 rounded-sm bg-foreground/80" />
+              <div className="mt-1 h-2 w-full rounded-sm bg-muted-foreground/40" />
+              <div className="h-2 w-2/3 rounded-sm bg-muted-foreground/40" />
+              <div className="mt-2 flex gap-1.5">
+                <span className="h-6 w-16 rounded-md bg-primary" />
+                <span className="h-6 w-14 rounded-md border" />
+              </div>
+            </div>
+            {/* Selected section strip */}
+            <div className="relative mt-auto border-t ring-2 ring-ring ring-inset">
+              <span className="absolute -top-2 left-2 z-10 rounded border bg-background px-1.5 py-px font-mono text-[9px] text-muted-foreground shadow-sm">
+                FeatureGrid
+              </span>
+              <div className="grid grid-cols-3 gap-2 p-3" aria-hidden>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex flex-col gap-1">
+                    <span className="size-3 rounded-sm bg-primary/25" />
+                    <span className="h-1.5 w-full rounded-sm bg-muted-foreground/30" />
+                    <span className="h-1.5 w-2/3 rounded-sm bg-muted-foreground/30" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Inspector column */}
+        <div className="flex w-24 flex-col gap-2 border-l p-2">
+          <p className="px-1 text-[10px] font-medium text-muted-foreground">Layers</p>
+          {["Section", "Hero", "FeatureGrid", "Footer"].map((layer, i) => (
+            <div
+              key={layer}
+              style={{ paddingLeft: 6 + i * 4 }}
+              className={
+                layer === "FeatureGrid"
+                  ? "flex items-center gap-1 rounded-md bg-accent py-0.5 text-[10px] font-medium text-accent-foreground"
+                  : "flex items-center gap-1 py-0.5 text-[10px] text-muted-foreground"
+              }
+            >
+              <ChevronRightIcon className="size-2.5" />
+              <span className="truncate">{layer}</span>
+            </div>
+          ))}
+          <div className="mt-2 flex flex-col gap-1.5 border-t pt-2">
+            <div className="h-1.5 w-10 rounded-sm bg-muted-foreground/40" />
+            <div className="h-5 w-full rounded-md border" />
+            <div className="h-5 w-full rounded-md border" />
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -88,7 +139,7 @@ export function AuthLayout() {
         </div>
       </div>
       <div className="hidden items-center justify-center border-l bg-muted/40 lg:flex">
-        <EditorPreview />
+        <EditorShowcase />
       </div>
     </div>
   )

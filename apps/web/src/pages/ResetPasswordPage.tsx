@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
 import { AuthFlowError, resetPassword } from "@/lib/auth"
+import { PasswordInput } from "@/components/PasswordInput"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -12,7 +13,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 
 const resetSchema = z
@@ -81,9 +81,8 @@ export function ResetPasswordPage() {
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="password">New password</FieldLabel>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="new-password"
               aria-invalid={form.formState.errors.password ? true : undefined}
               {...form.register("password")}
@@ -94,9 +93,8 @@ export function ResetPasswordPage() {
           </Field>
           <Field>
             <FieldLabel htmlFor="confirm">Repeat the new password</FieldLabel>
-            <Input
+            <PasswordInput
               id="confirm"
-              type="password"
               autoComplete="new-password"
               aria-invalid={form.formState.errors.confirm ? true : undefined}
               {...form.register("confirm")}

@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
 import { AuthFlowError, login } from "@/lib/auth"
+import { PasswordInput } from "@/components/PasswordInput"
 import { Button } from "@/components/ui/button"
 import {
   Field,
@@ -79,9 +80,8 @@ export function LoginPage() {
           </Field>
           <Field data-invalid={form.formState.errors.password ? true : undefined}>
             <FieldLabel htmlFor="password">Password</FieldLabel>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
               aria-invalid={form.formState.errors.password ? true : undefined}
               {...form.register("password")}
