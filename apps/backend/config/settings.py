@@ -33,6 +33,12 @@ class _Settings(BaseSettings):
     AWS_STORAGE_BUCKET_NAME: str = "sazeh-media"
     AWS_S3_REGION_NAME: str = "us-east-1"
 
+    # VPS hosting (Phase 7 — no AWS needed for MVP)
+    PUBLISH_BUNDLE_DIR: str = "/var/www/sazeh/bundles"
+    PLATFORM_DOMAIN: str = "platform.app"
+    CLOUDFLARE_DNS_TOKEN: str = ""
+    CLOUDFLARE_ZONE_ID: str = ""
+
     # LLM (OpenAI-compatible: base URL, key, and model are env-configured;
     # see decision D0.2 in sazeh-dev-plan-v2.md)
     LLM_PROVIDER: str = "openai"
@@ -246,6 +252,12 @@ LLM_PROVIDER = _env.LLM_PROVIDER
 LLM_BASE_URL = _env.LLM_BASE_URL
 LLM_API_KEY = _env.LLM_API_KEY
 LLM_MODEL = _env.LLM_MODEL
+
+# VPS hosting (Phase 7 — no AWS needed for MVP)
+PUBLISH_BUNDLE_DIR = _env.PUBLISH_BUNDLE_DIR or "/var/www/sazeh/bundles"
+PLATFORM_DOMAIN = _env.PLATFORM_DOMAIN or "platform.app"
+CLOUDFLARE_DNS_TOKEN = _env.CLOUDFLARE_DNS_TOKEN
+CLOUDFLARE_ZONE_ID = _env.CLOUDFLARE_ZONE_ID
 
 # Redis lock prefix (agent orchestrator)
 REDIS_LOCK_PREFIX = "sazeh:locks:"

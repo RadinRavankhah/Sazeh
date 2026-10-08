@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Page, Site
+from .models import Page, PublishBranch, Site
 from .theme import validate_theme
 
 
@@ -76,3 +76,17 @@ class TreePatchInputSerializer(serializers.Serializer):
         min_length=1,
         help_text="List of atomic tree operations: update_props, insert, delete, move.",
     )
+
+
+class PublishBranchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PublishBranch
+        fields = [
+            "id", "site", "name", "tag", "status", "target",
+            "result_url", "error_log", "branch_snapshot",
+            "created_by", "created_at", "published_at",
+        ]
+        read_only_fields = [
+            "id", "site", "status", "result_url", "error_log",
+            "branch_snapshot", "created_by", "created_at", "published_at",
+        ]

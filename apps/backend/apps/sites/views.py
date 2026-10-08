@@ -8,12 +8,15 @@ from apps.workspaces.permissions import IsWorkspaceEditorOrAbove
 from apps.workspaces.scoping import WorkspaceScopedMixin
 from apps.workspaces.services import ensure_default_workspace
 
-from .models import Page, Site
+from .models import Page, PublishBranch, Site
 from .serializers import (
     PageSerializer,
+    PublishBranchSerializer,
     SiteSerializer,
     TreePatchInputSerializer,
 )
+from .services import build_bundle, upload_to_vps
+from .tasks import publish_site
 from .tree import TreePatchService
 from .validators import validate_tree
 
@@ -134,3 +137,59 @@ class PageViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
     def get_tree(self, request, site_pk=None, pk=None):
         page = self.get_object()
         return Response({"id": str(page.id), "tree": page.tree})
+
+    @action(detail=True, methods=["post"], url_path="publish")
+    def publish(self, request, site_pk=None, pk=None):
+        """Trigger a publish: creates a branch, builds the bundle, uploads."""
+        site = self.get_object()
+        name = request.data.get("name", "main")
+        tag = request.data.get("tag", "")
+        target = request.data.get("target", "platform")
+        branch = PublishBranch.objects.create(
+            site=site,
+            name=name,
+            tag=tag,
+            target=target,
+            created_by=request.user,
+        )
+        publish_site.delay(branch.id)
+        return Response(PublishBranchSerializer(branch).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"], url_path="publish/branches")
+    def branches(self, request, site_pk=None, pk=None):
+        """List all branches for a site."""
+        site = self.get_object()
+        qs = PublishBranch.objects.filter(site=site).order_by("-created_at")
+        return Response(PublishBranchSerializer(qs, many=True).data)
+
+
+class PublishBranchViewSet(WorkspaceScopedMixin, viewsets.ReadOnlyModelViewSet):
+    serializer_class = PublishBranchSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        site = get_object_or_404(
+            Site,
+            pk=self.kwargs.get("site_pk"),
+            workspace__in=self.get_member_workspaces(),
+        )
+        return PublishBranch.objects.filter(site=site)
+
+    @action(detail=True, methods=["post"], url_path="rollback")
+    def rollback(self, request, site_pk=None, pk=None):
+        branch = self.get_object()
+        publish_site.delay(branch.id)
+        return Response(PublishBranchSerializer(branch).data)
+
+    @action(detail=True, methods=["post"], url_path="merge")
+    def merge(self, request, site_pk=None, pk=None):
+        branch = self.get_object()
+        if branch.status != PublishBranch.Status.PUBLISHED:
+            return Response(
+                {"error": "Only published branches can be merged."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        branch.site.published_branch = branch
+        branch.site.status = Site.Status.PUBLISHED
+        branch.site.save(update_fields=["published_branch", "status"])
+        return Response(PublishBranchSerializer(branch).data)
