@@ -40,10 +40,8 @@ const buttonVariants = cva(
   }
 )
 
-/**
- * React 18 note: forward the ref explicitly — Base UI primitives expect
- * React 19 ref-as-prop semantics otherwise.
- */
+// React 18 note: forward the ref explicitly — Base UI primitives expect
+// React 19 ref-as-prop semantics otherwise.
 const Button = React.forwardRef<
   HTMLButtonElement,
   ButtonPrimitive.Props & VariantProps<typeof buttonVariants>

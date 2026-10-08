@@ -2,12 +2,10 @@ import * as React from "react"
 import { Input as InputPrimitive } from "@base-ui/react/input"
 import { cn } from "cn"
 
-/**
- * React 18 note: Base UI (and the shadcn base style) assume React 19 semantics
- * where `ref` is a regular prop flowing through {...props}. On React 18 the
- * ref must be forwarded explicitly, otherwise react-hook-form's register()
- * cannot attach and form values resolve to `undefined`.
- */
+// React 18 note: Base UI (and the shadcn base style) assume React 19 semantics
+// where `ref` is a regular prop flowing through {...props}. On React 18 the
+// ref must be forwarded explicitly, otherwise react-hook-form's register()
+// cannot attach and form values resolve to `undefined`.
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   function Input({ className, type, ...props }, ref) {
     return (
