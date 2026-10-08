@@ -136,6 +136,26 @@
   html {
     @apply font-sans;
     }
+  /* Theme the browser's own surfaces (scrollbars, form controls, carets). */
+  html {
+    color-scheme: light;
+    }
+  html.dark {
+    color-scheme: dark;
+    }
+}
+
+/*
+ * Editor canvas backdrop — a quiet dot grid, the design-tool surface the
+ * page frame sits on. Derived from --border so it reads in both modes.
+ */
+.editor-canvas {
+  background-color: var(--muted);
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--border) 80%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 16px 16px;
 }
 
 /*

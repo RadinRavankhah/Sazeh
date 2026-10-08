@@ -25,7 +25,7 @@ export function MessageList() {
   }, [messages.length, draft, activity.length])
 
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto py-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-4">
       {messages.map((message) => {
         if (message.role === "tool") return null
         const text = message.content.content

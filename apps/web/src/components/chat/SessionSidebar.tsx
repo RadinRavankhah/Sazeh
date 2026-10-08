@@ -34,7 +34,8 @@ export function SessionSidebar({ siteId }: { siteId: string }) {
         <PlusIcon data-icon="inline-start" />
         New chat
       </Button>
-      <nav className="flex flex-col gap-1 overflow-y-auto">
+      <nav className="flex flex-col gap-1 overflow-y-auto" aria-label="Chat sessions">
+        <p className="px-2 text-sm font-medium text-muted-foreground">Chats</p>
         {sessionsLoading ? (
           <Skeleton className="h-8 w-full" />
         ) : sessions.length === 0 ? (

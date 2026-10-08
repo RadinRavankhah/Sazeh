@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { useChatStore } from "@/stores/chat"
 import type { MessageSelection } from "@/lib/agent"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 
 /** Message composer — optional editor selection rides along (D6.1). */
 export function Composer({
@@ -54,8 +55,8 @@ export function Composer({
           Stop
         </Button>
       ) : (
-        <div className="flex items-end gap-2">
-          <textarea
+        <div className="flex items-start gap-2">
+          <Textarea
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {
@@ -67,7 +68,7 @@ export function Composer({
             rows={2}
             placeholder={disabled ? "The editor is saving — one moment…" : "Describe what to build or change…"}
             disabled={disabled}
-            className="w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="max-h-44 min-h-16 resize-none"
           />
           <Button
             size="icon"
