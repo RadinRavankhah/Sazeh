@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
 import {
+  CircleAlertIcon,
   EyeIcon,
+  LayoutTemplateIcon,
   MoreHorizontalIcon,
   MousePointerClickIcon,
   PencilIcon,
@@ -24,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CreateSiteDialog, DeleteSiteDialog, RenameSiteDialog } from "@/components/site-dialogs"
 
@@ -53,52 +56,74 @@ function SiteCard({ site }: { site: SiteResource }) {
   const [deleting, setDeleting] = useState(false)
 
   return (
-    <Card className="transition-colors hover:border-ring/60">
-      <CardContent className="flex flex-col gap-4 p-5">
+    <Card className="group relative overflow-hidden py-0 transition-all hover:shadow-md hover:ring-ring/40 focus-within:ring-ring/40">
+      <CardContent className="p-0">
         <button
           type="button"
           onClick={() => navigate(`/sites/${site.id}/edit`)}
-          className="flex cursor-pointer flex-col gap-1 rounded-lg text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="block w-full cursor-pointer rounded-[inherit] text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          aria-label={`Open ${site.name} in the visual editor`}
         >
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="truncate font-medium tracking-tight">{site.name}</h3>
-            <Badge variant={site.status === "published" ? "default" : "secondary"}>
-              {site.status}
-            </Badge>
-          </div>
-          <p className="truncate font-mono text-xs text-muted-foreground">/{site.slug}</p>
-        </button>
-        <div className="mt-auto flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Updated {relativeTime(site.updated_at)}</p>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-sm" aria-label={`Site options for ${site.name}`} />}
+          {/* Monogram tile — the card's face */}
+          <div className="relative grid h-28 place-items-center border-b bg-accent/50">
+            <span
+              aria-hidden
+              className="font-heading text-5xl font-semibold tracking-tight text-foreground/15 select-none"
             >
-              <MoreHorizontalIcon />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/generate`)}>
-                <SparklesIcon /> Build with agent
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/edit`)}>
-                <MousePointerClickIcon /> Edit in visual editor
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/preview`)}>
-                <EyeIcon /> Preview
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/settings`)}>
-                <SettingsIcon /> Theme settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setRenaming(true)}>
-                <PencilIcon /> Rename
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => setDeleting(true)}>
-                <Trash2Icon /> Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              {site.name.charAt(0).toUpperCase() || "S"}
+            </span>
+            <Badge
+              variant={site.status === "published" ? "default" : "secondary"}
+              className="absolute top-3 right-3"
+            >
+              {site.status === "published" ? "Published" : "Draft"}
+            </Badge>
+            <span className="absolute bottom-2 left-3 font-mono text-[0.7rem] text-muted-foreground">
+              /{site.slug}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3 p-4 pr-12">
+            <div className="min-w-0">
+              <h3 className="truncate font-medium tracking-tight">{site.name}</h3>
+              <p className="text-xs text-muted-foreground">Updated {relativeTime(site.updated_at)}</p>
+            </div>
+          </div>
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Site options for ${site.name}`}
+                className="absolute right-2 bottom-2.5"
+              />
+            }
+          >
+            <MoreHorizontalIcon />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/generate`)}>
+              <SparklesIcon /> Build with agent
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/edit`)}>
+              <MousePointerClickIcon /> Edit in visual editor
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/preview`)}>
+              <EyeIcon /> Preview
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/sites/${site.id}/settings`)}>
+              <SettingsIcon /> Theme settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setRenaming(true)}>
+              <PencilIcon /> Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onClick={() => setDeleting(true)}>
+              <Trash2Icon /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </CardContent>
 
       <RenameSiteDialog
@@ -150,27 +175,43 @@ export function DashboardPage() {
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-32 rounded-xl" />
+            <Skeleton key={i} className="h-44 rounded-xl" />
           ))}
         </div>
       ) : error !== null ? (
-        <div className="rounded-xl border border-dashed px-6 py-12 text-center">
-          <p className="text-sm text-muted-foreground">{error}</p>
-          <Button variant="outline" className="mt-4" onClick={() => void refresh()}>
-            Retry
-          </Button>
-        </div>
+        <Empty className="border" data-testid="sites-error">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <CircleAlertIcon />
+            </EmptyMedia>
+            <EmptyTitle>Couldn't load your sites</EmptyTitle>
+            <EmptyDescription>{error}</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button variant="outline" onClick={() => void refresh()}>
+              Try again
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : sites.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center">
-          <p className="font-medium">No sites yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Create your first site, then describe what you want — the agent builds it with you.
-          </p>
-          <Button variant="outline" onClick={() => setCreating(true)}>
-            <PlusIcon data-icon="inline-start" />
-            Create your first site
-          </Button>
-        </div>
+        <Empty className="border py-16" data-testid="sites-empty">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LayoutTemplateIcon />
+            </EmptyMedia>
+            <EmptyTitle>No sites yet</EmptyTitle>
+            <EmptyDescription>
+              Create your first site, then describe what you want — the agent
+              builds it with you.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button variant="outline" onClick={() => setCreating(true)}>
+              <PlusIcon data-icon="inline-start" />
+              Create your first site
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sites.map((site) => (

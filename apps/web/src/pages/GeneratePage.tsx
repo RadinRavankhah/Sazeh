@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router"
-import { ArrowLeftIcon, EyeIcon } from "lucide-react"
+import { ArrowLeftIcon, EyeIcon, MousePointerClickIcon } from "lucide-react"
 
 import { api } from "@/lib/api"
 import type { PageResource, SiteResource } from "@/lib/sites"
 import { useChatStore } from "@/stores/chat"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
@@ -103,7 +102,10 @@ export function GeneratePage() {
             </Select>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="secondary">Agent chat</Badge>
+            <Button variant="ghost" size="sm" nativeButton={false} render={<Link to={`/sites/${siteId}/edit`} />}>
+              <MousePointerClickIcon data-icon="inline-start" />
+              Open in editor
+            </Button>
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link to={`/sites/${siteId}/preview`} />}>
               <EyeIcon data-icon="inline-start" />
               Preview

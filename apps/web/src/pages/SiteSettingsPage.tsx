@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { ArrowLeftIcon, Link as LinkIcon, MousePointerClickIcon, PencilIcon } from "lucide-react"
 import { Link, useNavigate, useParams } from "react-router"
 import { z } from "zod"
 
@@ -18,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { SiteThemeStyle } from "@/render/SiteThemeStyle"
 
 /**
  * First consumer of the D2.2 theme tokens. The Zod schema mirrors
@@ -135,146 +138,206 @@ export function SiteSettingsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <header className="flex flex-col gap-2">
-        <p className="text-sm text-muted-foreground">{site.name}</p>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1 self-start text-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          <ArrowLeftIcon className="size-3.5" />
+          All sites
+        </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Theme settings</h1>
         <p className="text-sm text-muted-foreground">
-          Tokens apply across every page of the site — in the agent’s output and
-          the preview alike.
+          {site.name} — tokens apply across every page of the site, in the
+          agent's output and the preview alike.
         </p>
       </header>
 
-      <Card>
-        <CardContent className="flex flex-col gap-6 p-6">
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="accent">Accent color</FieldLabel>
-              <div className="flex items-center gap-3">
-                <input
-                  id="accent"
-                  type="color"
-                  value={/^#[0-9a-fA-F]{6}$/.test(form.accent_color) ? form.accent_color : "#000000"}
-                  onChange={(e) => set("accent_color", e.target.value)}
-                  aria-label="Pick accent color"
-                  className="size-9 cursor-pointer rounded-lg border border-input bg-transparent p-1"
-                />
-                <Input
-                  id="accent-hex"
-                  value={form.accent_color}
-                  onChange={(e) => set("accent_color", e.target.value)}
-                  autoComplete="off"
-                  className="w-32 font-mono"
-                  aria-invalid={!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(form.accent_color)}
-                />
-              </div>
-              {!parsed.success && parsed.error.issues.some((i) => i.path[0] === "accent_color") && (
-                <FieldDescription>Use a hex color like #2563eb.</FieldDescription>
-              )}
-            </Field>
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
+        <Card>
+          <CardContent className="flex flex-col gap-6 p-6">
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="accent">Accent color</FieldLabel>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="accent"
+                    type="color"
+                    value={/^#[0-9a-fA-F]{6}$/.test(form.accent_color) ? form.accent_color : "#000000"}
+                    onChange={(e) => set("accent_color", e.target.value)}
+                    aria-label="Pick accent color"
+                    className="size-9 cursor-pointer rounded-lg border border-input bg-transparent p-1"
+                  />
+                  <Input
+                    id="accent-hex"
+                    value={form.accent_color}
+                    onChange={(e) => set("accent_color", e.target.value)}
+                    autoComplete="off"
+                    className="w-32 font-mono"
+                    aria-invalid={!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(form.accent_color)}
+                  />
+                </div>
+                {!parsed.success && parsed.error.issues.some((i) => i.path[0] === "accent_color") && (
+                  <FieldDescription>Use a hex color like #2563eb.</FieldDescription>
+                )}
+              </Field>
 
-            <Field>
-              <FieldLabel htmlFor="font">Body typeface</FieldLabel>
-              <Select
-                value={form.font_family}
-                onValueChange={(value) => set("font_family", value as ThemeForm["font_family"])}
-              >
-                <SelectTrigger id="font" className="w-64">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FONT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
+              <Field>
+                <FieldLabel htmlFor="font">Body typeface</FieldLabel>
+                <Select
+                  value={form.font_family}
+                  onValueChange={(value) => set("font_family", value as ThemeForm["font_family"])}
+                >
+                  <SelectTrigger id="font" className="w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
 
-            <Field>
-              <FieldLabel>Corner radius</FieldLabel>
-              <div className="flex gap-2">
-                {RADIUS_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => set("radius", option.value)}
-                    aria-pressed={form.radius === option.value}
-                    className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border px-4 py-3 text-xs transition-colors ${
-                      form.radius === option.value
-                        ? "border-ring ring-3 ring-ring/30"
-                        : "hover:border-ring/50"
-                    }`}
-                  >
-                    <span
-                      className="block size-6 border-2 border-foreground/60"
-                      style={{
-                        borderRadius:
-                          option.value === "full"
-                            ? "9999px"
-                            : { none: 0, sm: 3, md: 6, lg: 10, full: 9999 }[option.value],
-                      }}
-                    />
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </Field>
-
-            <Field>
-              <FieldLabel>Heading scale</FieldLabel>
-              <div className="flex flex-col gap-2">
-                {SCALE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => set("heading_scale", option.value)}
-                    aria-pressed={form.heading_scale === option.value}
-                    className={`flex cursor-pointer items-center justify-between rounded-lg border px-4 py-2.5 text-left transition-colors ${
-                      form.heading_scale === option.value
-                        ? "border-ring ring-3 ring-ring/30"
-                        : "hover:border-ring/50"
-                    }`}
-                  >
-                    <span>
-                      <span className="block text-sm font-medium">{option.label}</span>
-                      <span className="block text-xs text-muted-foreground">{option.hint}</span>
-                    </span>
-                    <span
-                      className="font-semibold tracking-tight"
-                      style={{ fontSize: { compact: "1rem", normal: "1.25rem", large: "1.6rem" }[option.value] }}
+              <Field>
+                <FieldLabel>Corner radius</FieldLabel>
+                <ToggleGroup
+                  value={[form.radius]}
+                  onValueChange={(next) => {
+                    const value = next[next.length - 1]
+                    if (typeof value === "string") set("radius", value as ThemeForm["radius"])
+                  }}
+                  className="flex-wrap"
+                  aria-label="Corner radius"
+                >
+                  {RADIUS_OPTIONS.map((option) => (
+                    <ToggleGroupItem
+                      key={option.value}
+                      value={option.value}
+                      aria-label={`${option.label} corners`}
+                      className="flex cursor-pointer flex-col gap-2 rounded-lg border px-4 py-3 text-xs aria-pressed:border-ring aria-pressed:ring-3 aria-pressed:ring-ring/30 hover:border-ring/50 data-[state=on]:border-ring data-[state=on]:bg-transparent"
                     >
-                      Aa
-                    </span>
-                  </button>
-                ))}
+                      <span
+                        className="block size-6 border-2 border-foreground/60"
+                        style={{
+                          borderRadius:
+                            option.value === "full"
+                              ? "9999px"
+                              : { none: 0, sm: 3, md: 6, lg: 10, full: 9999 }[option.value],
+                        }}
+                      />
+                      {option.label}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </Field>
+
+              <Field>
+                <FieldLabel>Heading scale</FieldLabel>
+                <ToggleGroup
+                  value={[form.heading_scale]}
+                  onValueChange={(next) => {
+                    const value = next[next.length - 1]
+                    if (typeof value === "string") set("heading_scale", value as ThemeForm["heading_scale"])
+                  }}
+                  orientation="vertical"
+                  className="w-full"
+                  aria-label="Heading scale"
+                >
+                  {SCALE_OPTIONS.map((option) => (
+                    <ToggleGroupItem
+                      key={option.value}
+                      value={option.value}
+                      aria-label={`${option.label} headings`}
+                      className="w-full cursor-pointer items-center justify-between rounded-lg border px-4 py-2.5 text-left aria-pressed:border-ring aria-pressed:ring-3 aria-pressed:ring-ring/30 hover:border-ring/50 data-[state=on]:border-ring data-[state=on]:bg-transparent"
+                    >
+                      <span>
+                        <span className="block text-sm font-medium">{option.label}</span>
+                        <span className="block text-xs text-muted-foreground">{option.hint}</span>
+                      </span>
+                      <span
+                        className="font-semibold tracking-tight"
+                        style={{ fontSize: { compact: "1rem", normal: "1.25rem", large: "1.6rem" }[option.value] }}
+                      >
+                        Aa
+                      </span>
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </Field>
+            </FieldGroup>
+
+            <div className="flex items-center justify-between gap-4 border-t pt-4">
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {dirty ? "Unsaved changes" : parsed.success ? "All changes saved" : "Fix the accent color to save"}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={() => navigate(`/sites/${siteId}/preview`)}>
+                  Open preview
+                </Button>
+                <Button onClick={() => void onSave()} disabled={!dirty || busy || !parsed.success}>
+                  Save theme
+                </Button>
               </div>
-            </Field>
-          </FieldGroup>
-
-          <div className="flex items-center justify-between gap-4 border-t pt-4">
-            <p className="text-xs text-muted-foreground" aria-live="polite">
-              {dirty ? "Unsaved changes" : parsed.success ? "All changes saved" : "Fix the accent color to save"}
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={() => navigate(`/sites/${siteId}/preview`)}>
-                Open preview
-              </Button>
-              <Button onClick={() => void onSave()} disabled={!dirty || busy || !parsed.success}>
-                Save theme
-              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <p className="text-sm text-muted-foreground">
-        Want to see the tokens applied?{" "}
-        <Link to={`/sites/${siteId}/preview`} className="underline underline-offset-4">
-          Open the draft preview
+        {/* Live mini-preview — the unsaved form values applied to a mock hero. */}
+        <div className="flex flex-col gap-2 lg:sticky lg:top-12">
+          <p className="text-sm font-medium text-muted-foreground">Preview</p>
+          <div className="overflow-hidden rounded-xl border">
+            <SiteThemeStyle theme={form}>
+              <div className="flex flex-col gap-6 bg-background p-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold tracking-tight">{site.name}</span>
+                  <span className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-[var(--primary-foreground)] bg-[var(--primary)]">
+                    <MousePointerClickIcon className="size-3" />
+                    Menu
+                  </span>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <h2 className="font-semibold tracking-tight" style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)" }}>
+                    Everything you make, in one place
+                  </h2>
+                  <p className="max-w-[45ch] text-sm text-muted-foreground">
+                    This preview uses your tokens — color, typeface, radius and
+                    heading scale update as you edit.
+                  </p>
+                  <div className="flex gap-2">
+                    <span className="rounded-md bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-[var(--primary-foreground)]">
+                      Get started
+                    </span>
+                    <span className="rounded-md border px-3 py-1.5 text-sm">Learn more</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3 border-t pt-4">
+                  {["Fast", "Simple", "Yours"].map((label) => (
+                    <div key={label} className="flex flex-col gap-1.5 rounded-md border p-3">
+                      <span className="size-4 rounded-sm bg-[var(--primary)]/25" />
+                      <span className="text-xs font-medium">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SiteThemeStyle>
+          </div>
+        </div>
+      </div>
+
+      <p className="flex items-center gap-1 text-sm text-muted-foreground">
+        <PencilIcon className="size-3.5" />
+        Want to change the page itself?{" "}
+        <Link
+          to={`/sites/${siteId}/edit`}
+          className="inline-flex items-center gap-0.5 font-medium text-foreground underline underline-offset-4"
+        >
+          Open the visual editor
+          <LinkIcon className="size-3" />
         </Link>
-        .
       </p>
     </div>
   )
