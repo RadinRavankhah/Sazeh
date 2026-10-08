@@ -7,8 +7,10 @@ import {
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  BlocksIcon,
   CopyIcon,
   GripVerticalIcon,
+  PlusIcon,
   Trash2Icon,
 } from "lucide-react"
 
@@ -22,33 +24,50 @@ import { cn } from "@/lib/utils"
 import { locateNode, useEditorStore } from "@/stores/editor"
 
 /**
- * Canvas (Phase 4 tasks 4–5): the read-only renderer dressed in editor
- * chrome. Only the root's direct children (the page's sections) get
- * selection/drag affordances — nested blocks are selected from the layers
- * list in the inspector. Mobile mode is a read-only width preview (D4.2).
+ * Canvas (3-zone shell): the page is the hero. Sections get selection,
+ * drag and insert affordances that straddle the section's top edge so they
+ * never cover the rendered content. Only the root's direct children get
+ * chrome — nested blocks are selected from the Layers list. Mobile mode is
+ * a read-only width preview (D4.2).
  */
 
 function displayName(component: string): string {
   return CATALOG.find((entry) => entry.name === component)?.display_name ?? component
 }
 
-function DropSlot({ index }: { index: number }) {
+/** Insert point between sections. While dragging: a drop line. Otherwise:
+ *  a hover-revealed "+" button that opens the block palette at this index. */
+function InsertSlot({ index, onAdd }: { index: number; onAdd: (index: number) => void }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `slot:${index}`,
     data: { index },
   })
   const dragging = useDndContext().active !== null
 
-  return (
-    <div ref={setNodeRef} className={cn("relative", dragging ? "h-5" : "h-0")}>
-      {dragging && (
+  if (dragging) {
+    return (
+      <div ref={setNodeRef} className="relative h-5">
         <div
           className={cn(
             "absolute inset-x-6 top-1/2 h-0.5 -translate-y-1/2 rounded-full transition-colors",
             isOver ? "bg-primary" : "bg-border",
           )}
         />
-      )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="group/slot relative z-30 h-0">
+      <div className="absolute inset-x-10 -top-2.5 h-5" aria-hidden />
+      <button
+        type="button"
+        aria-label={`Add a block at position ${index + 1}`}
+        onClick={() => onAdd(index)}
+        className="absolute top-0 left-1/2 flex size-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border bg-background text-muted-foreground opacity-0 shadow-sm transition-opacity outline-none hover:border-ring/60 hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 group-hover/slot:opacity-100"
+      >
+        <PlusIcon className="size-3" />
+      </button>
     </div>
   )
 }
@@ -101,9 +120,26 @@ function SectionChrome({
         )}
       />
 
+      {/* Drag label + section actions straddle the top edge so they never
+          cover the rendered content (Webflow/Framer pattern). */}
+      {rootId !== undefined && (
+        <div
+          {...attributes}
+          {...listeners}
+          title="Drag to move this section"
+          className={cn(
+            "absolute -top-3 left-4 z-20 flex cursor-grab items-center gap-1 rounded-md border bg-background px-2 py-0.5 text-xs font-medium shadow-sm outline-none select-none",
+            selected ? "" : "opacity-0 transition-opacity group-hover/section:opacity-100",
+          )}
+        >
+          <GripVerticalIcon className="size-3 text-muted-foreground" />
+          {displayName(node.component)}
+        </div>
+      )}
+
       {rootId !== undefined && selected && (
         <div
-          className="absolute top-2 right-2 z-20 flex items-center gap-1 rounded-lg border bg-background p-1 shadow-sm"
+          className="absolute -top-3 right-4 z-20 flex items-center gap-0.5 rounded-md border bg-background p-0.5 shadow-sm"
           onClick={(e) => e.stopPropagation()}
         >
           <Button
@@ -147,30 +183,17 @@ function SectionChrome({
           </Button>
         </div>
       )}
-
-      {rootId !== undefined && (
-        <div
-          className={cn(
-            "absolute top-2 left-2 z-20 flex items-center",
-            selected ? "" : "opacity-0 transition-opacity group-hover/section:opacity-100",
-          )}
-        >
-          <div
-            {...attributes}
-            {...listeners}
-            title="Drag to move this section"
-            className="flex cursor-grab items-center gap-1 rounded-md border bg-background px-2 py-1 text-xs font-medium shadow-sm outline-none select-none"
-          >
-            <GripVerticalIcon className="size-3 text-muted-foreground" />
-            {displayName(node.component)}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
-export function Canvas({ site }: { site: SiteResource | null }) {
+export function Canvas({
+  site,
+  onAddAt,
+}: {
+  site: SiteResource | null
+  onAddAt: (index: number) => void
+}) {
   const tree = useEditorStore((s) => s.tree)
   const breakpoint = useEditorStore((s) => s.breakpoint)
   const select = useEditorStore((s) => s.select)
@@ -179,7 +202,7 @@ export function Canvas({ site }: { site: SiteResource | null }) {
 
   return (
     <div
-      className="min-w-0 flex-1 overflow-y-auto bg-muted/40 p-6"
+      className="editor-canvas min-w-0 flex-1 overflow-y-auto p-8"
       onClick={() => select(null)}
     >
       <div
@@ -190,7 +213,7 @@ export function Canvas({ site }: { site: SiteResource | null }) {
       >
         <SiteThemeStyle theme={site?.config?.theme}>
           {tree.children.length === 0 ? (
-            <EmptyCanvas />
+            <EmptyCanvas onAdd={() => onAddAt(0)} />
           ) : (
             <PageRenderer
               root={tree}
@@ -202,9 +225,9 @@ export function Canvas({ site }: { site: SiteResource | null }) {
                 const isLast = located !== null && index === tree.children.length - 1
                 return (
                   <>
-                    {index === 0 && <DropSlot index={0} />}
+                    {index === 0 && <InsertSlot index={0} onAdd={onAddAt} />}
                     <SectionChrome node={childNode}>{element}</SectionChrome>
-                    {isLast && <DropSlot index={index + 1} />}
+                    {isLast && <InsertSlot index={index + 1} onAdd={onAddAt} />}
                   </>
                 )
               }}
@@ -216,29 +239,33 @@ export function Canvas({ site }: { site: SiteResource | null }) {
   )
 }
 
-function EmptyCanvas() {
+function EmptyCanvas({ onAdd }: { onAdd: () => void }) {
   const { setNodeRef, isOver } = useDroppable({
     id: "slot:0",
     data: { index: 0 },
   })
-  const tree = useEditorStore((s) => s.tree)
-  const rootId = tree?.id
 
   return (
-    <div ref={setNodeRef} className="px-6 py-24" onClick={(e) => e.stopPropagation()}>
+    <div ref={setNodeRef} className="px-6 py-16" onClick={(e) => e.stopPropagation()}>
       <div
         className={cn(
-          "mx-auto flex max-w-md flex-col items-center gap-2 rounded-xl border-2 border-dashed p-10 text-center",
+          "mx-auto flex max-w-md flex-col items-center gap-3 rounded-xl border-2 border-dashed p-10 text-center",
           isOver ? "border-primary bg-accent/40" : "border-border",
         )}
       >
-        <p className="font-medium">This page is empty</p>
+        <div className="flex size-10 items-center justify-center rounded-lg bg-muted">
+          <BlocksIcon className="size-5 text-muted-foreground" />
+        </div>
+        <p className="font-medium">Build this page</p>
         <p className="text-sm text-muted-foreground">
-          Drag a section from the left palette to start building — or let the
-          agent draft one for you from the chat page.
+          Add a ready-made section — or describe the page in the agent chat
+          and let it build.
         </p>
+        <Button size="sm" variant="outline" onClick={onAdd}>
+          <PlusIcon data-icon="inline-start" />
+          Add section
+        </Button>
       </div>
-      {rootId !== undefined && <span className="sr-only">Drop target index 0 of {rootId}</span>}
     </div>
   )
 }

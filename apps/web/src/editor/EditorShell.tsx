@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type CSSProperties } from "react"
 import { Link, useNavigate, useParams } from "react-router"
 import {
   DndContext,
@@ -11,29 +11,35 @@ import {
 } from "@dnd-kit/core"
 import {
   ArrowLeftIcon,
-  MessageSquareIcon,
   MonitorIcon,
+  MessageSquareIcon,
   Redo2Icon,
   SmartphoneIcon,
   Undo2Icon,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import type { ComponentInstance, RegistryEntry } from "@sazeh/schema"
+import type { ComponentInstance } from "@sazeh/schema"
 import { CATALOG } from "@sazeh/schema"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { api } from "@/lib/api"
 import { ApiError } from "@/lib/api"
 import { updatePage } from "@/lib/editor"
 import { getPageTree, listPages, type PageResource, type SiteResource } from "@/lib/sites"
+import { AddBlockDialog } from "@/editor/AddBlockDialog"
 import { Canvas } from "@/editor/Canvas"
-import { ChatDock } from "@/editor/ChatDock"
-import { Inspector } from "@/editor/Inspector"
-import { Palette } from "@/editor/Palette"
-import { PagesRail } from "@/editor/PagesRail"
+import { EditorSidebar } from "@/editor/EditorSidebar"
+import { RightDock, type RightTab } from "@/editor/RightDock"
 import { cn } from "@/lib/utils"
 import { useChatStore } from "@/stores/chat"
 import {
@@ -46,9 +52,7 @@ import {
   useEditorStore,
 } from "@/stores/editor"
 
-type DragData =
-  | { type: "palette"; entry: RegistryEntry }
-  | { type: "section"; nodeId: string }
+type SectionDragData = { type: "section"; nodeId: string }
 
 const SAVE_LABEL: Record<string, string> = {
   saved: "All changes saved",
@@ -78,7 +82,11 @@ export function EditorShell() {
   const markError = useEditorStore((s) => s.markError)
 
   const [dragLabel, setDragLabel] = useState<string | null>(null)
-  const [chatOpen, setChatOpen] = useState(false)
+  const [rightTab, setRightTab] = useState<RightTab>("selection")
+  const [palette, setPalette] = useState<{ open: boolean; index: number | null }>({
+    open: false,
+    index: null,
+  })
 
   const mutationTick = useChatStore((s) => s.mutationTick)
   const agentStreaming = useChatStore((s) => s.streaming)
@@ -143,7 +151,7 @@ export function EditorShell() {
     }
   }, [siteId, pageId, bootstrap])
 
-  // Redirect when the rail points at a page that no longer exists.
+  // Redirect when the sidebar points at a page that no longer exists.
   useEffect(() => {
     if (missing && siteId !== undefined) navigate(`/sites/${siteId}/edit`, { replace: true })
   }, [missing, siteId, navigate])
@@ -196,17 +204,60 @@ export function EditorShell() {
     // page?.id intentionally read fresh via getState-like closure (page prop)
   }, [mutationTick, siteId, page?.id, replaceTree, reloadPages])
 
-  // Keyboard: undo/redo outside of form fields.
+  // Warn before leaving with unsaved work.
+  useEffect(() => {
+    if (saveState !== "dirty") return
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault()
+      event.returnValue = ""
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
+    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+  }, [saveState])
+
+  // Keyboard: undo/redo, delete selection, escape deselect, Ctrl+K palette —
+  // none of these inside form fields or open dialogs.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (!(event.ctrlKey || event.metaKey) || event.key !== "z") return
-      const tag = (event.target as HTMLElement | null)?.tagName
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
-      event.preventDefault()
-      if (event.shiftKey) {
-        redoEdit()
-      } else {
-        undoEdit()
+      const target = event.target as HTMLElement | null
+      const tag = target?.tagName
+      const inField =
+        tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable === true
+      const inDialog = target?.closest?.('[role="dialog"]') !== null
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !inField) {
+        event.preventDefault()
+        if (event.shiftKey) {
+          redoEdit()
+        } else {
+          undoEdit()
+        }
+        return
+      }
+
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault()
+        setPalette({ open: true, index: null })
+        return
+      }
+
+      if (inField || inDialog) return
+
+      if (event.key === "Escape") {
+        const { selectedId, select } = useEditorStore.getState()
+        if (selectedId !== null) {
+          event.preventDefault()
+          select(null)
+        }
+        return
+      }
+
+      if (event.key === "Delete" || event.key === "Backspace") {
+        const state = useEditorStore.getState()
+        if (state.tree !== null && state.selectedId !== null && state.selectedId !== state.tree.id) {
+          event.preventDefault()
+          state.removeNode(state.selectedId)
+        }
       }
     }
     window.addEventListener("keydown", onKeyDown)
@@ -214,32 +265,21 @@ export function EditorShell() {
   }, [])
 
   function onDragStart(event: DragStartEvent) {
-    const data = event.active.data.current as DragData | undefined
+    const data = event.active.data.current as SectionDragData | undefined
     if (data === undefined) return
-    if (data.type === "palette") {
-      setDragLabel(data.entry.display_name)
-      return
-    }
     const node = tree !== null ? findTreeNode(tree, data.nodeId) : null
-    const name = node !== null
-      ? (CATALOG_NAME(node.component) ?? "Section")
-      : "Section"
-    setDragLabel(name)
+    setDragLabel(node !== null ? catalogName(node.component) : "Section")
   }
 
   function onDragEnd(event: DragEndEvent) {
     setDragLabel(null)
     const { active, over } = event
     if (!over || tree === null) return
-    const activeData = active.data.current as DragData | undefined
+    const activeData = active.data.current as SectionDragData | undefined
     const overData = over.data.current as { index?: number } | undefined
     if (activeData === undefined || overData?.index === undefined) return
 
     const targetIndex = overData.index
-    if (activeData.type === "palette") {
-      useEditorStore.getState().insertComponent(tree.id, targetIndex, activeData.entry)
-      return
-    }
     // Section reorder — removing from its old index shifts later slots.
     const located = locateNode(tree, activeData.nodeId)
     if (located === null) return
@@ -247,6 +287,14 @@ export function EditorShell() {
     const effective = targetIndex > located.index ? targetIndex - 1 : targetIndex
     useEditorStore.getState().moveNode(activeData.nodeId, tree.id, effective)
   }
+
+  const selectionLabel =
+    selectedId !== null && tree !== null && selectedId !== tree.id
+      ? (() => {
+          const node = findTreeNode(tree, selectedId)
+          return node !== null ? catalogName(node.component) : null
+        })()
+      : null
 
   if (missing || (site !== null && page === null && pages.length === 0)) {
     return (
@@ -270,161 +318,171 @@ export function EditorShell() {
           <Skeleton className="h-6 w-40" />
         </div>
         <div className="flex min-h-0 flex-1">
-          <Skeleton className="w-52 rounded-none" />
-          <Skeleton className="w-64 rounded-none" />
-          <div className="flex-1 p-6">
-            <Skeleton className="h-full w-full" />
+          <Skeleton className="w-56 rounded-none" />
+          <div className="flex-1 p-8">
+            <Skeleton className="h-full w-full rounded-lg" />
           </div>
-          <Skeleton className="w-80 rounded-none" />
+          <Skeleton className="w-[340px] rounded-none" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-background">
-      <header className="flex h-12 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            nativeButton={false}
-            render={<Link to="/" />}
-            title="Back to dashboard"
-          >
-            <ArrowLeftIcon data-icon="inline-start" />
-            Dashboard
-          </Button>
-          <span className="truncate text-sm text-muted-foreground">
-            {site.name} / {page.title}
-          </span>
-        </div>
+    <TooltipProvider>
+      <SidebarProvider className="h-dvh" style={{ "--sidebar-width": "14rem" } as CSSProperties}>
+        <EditorSidebar
+          pages={pages}
+          onPagesChanged={() => void reloadPages()}
+          onAddBlock={() => setPalette({ open: true, index: null })}
+        />
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground" aria-live="polite">
-            {SAVE_LABEL[saveState]}
-          </span>
-          <div className="flex items-center rounded-lg border">
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Undo"
-              title="Undo (Ctrl+Z)"
-              disabled={!canUndo()}
-              onClick={() => undoEdit()}
-            >
-              <Undo2Icon />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Redo"
-              title="Redo (Ctrl+Shift+Z)"
-              disabled={!canRedo()}
-              onClick={() => redoEdit()}
-            >
-              <Redo2Icon />
-            </Button>
-          </div>
-          <div className="flex items-center rounded-lg border" role="group" aria-label="Preview width">
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Desktop width"
-              aria-pressed={breakpoint === "desktop"}
-              className={cn(breakpoint === "desktop" && "bg-accent")}
-              onClick={() => setBreakpoint("desktop")}
-            >
-              <MonitorIcon />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label="Mobile width"
-              aria-pressed={breakpoint === "mobile"}
-              className={cn(breakpoint === "mobile" && "bg-accent")}
-              onClick={() => setBreakpoint("mobile")}
-            >
-              <SmartphoneIcon />
-            </Button>
-          </div>
-          <Badge variant="secondary" className="hidden lg:inline-flex">
-            Draft
-          </Badge>
-          {agentStreaming && (
-            <Badge className="animate-pulse">Agent editing…</Badge>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            aria-pressed={chatOpen}
-            onClick={() => setChatOpen((open) => !open)}
-            title="Toggle the agent chat panel"
-          >
-            <MessageSquareIcon data-icon="inline-start" />
-            Chat
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            nativeButton={false}
-            render={<Link to={`/sites/${siteId}/preview`} />}
-            title="Open the full-page preview"
-          >
-            Preview
-          </Button>
-        </div>
-      </header>
-
-      <DndContext
-        sensors={sensors}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragCancel={() => setDragLabel(null)}
-      >
-        <div className="flex min-h-0 flex-1">
-          <PagesRail pages={pages} onPagesChanged={() => void reloadPages()} />
-          <Palette />
-          <Canvas site={site} />
-          <Inspector
-            site={site}
-            page={page}
-            onSaved={() => void reloadPages()}
-          />
-          {chatOpen && (
-            <ChatDock
-              site={site}
-              page={page}
-              selection={
-                selectedId !== null && tree !== null && selectedId !== tree.id
-                  ? { page: page.id, node: selectedId }
-                  : null
-              }
-              selectionNodeLabel={
-                selectedId !== null && tree !== null
-                  ? (() => {
-                      const node = findTreeNode(tree, selectedId)
-                      if (node === null || node.id === tree.id) return null
-                      return CATALOG_NAME(node.component)
-                    })()
-                  : null
-              }
-              onClose={() => setChatOpen(false)}
-            />
-          )}
-        </div>
-        <DragOverlay>
-          {dragLabel !== null ? (
-            <div className="rounded-lg border bg-background px-3 py-1.5 text-sm font-medium shadow-md">
-              {dragLabel}
+        <SidebarInset className="min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="flex h-12 shrink-0 items-center justify-between gap-3 border-b px-3">
+            <div className="flex min-w-0 items-center gap-1">
+              <SidebarTrigger />
+              <Separator orientation="vertical" className="mx-1 h-4" />
+              <Button
+                variant="ghost"
+                size="sm"
+                nativeButton={false}
+                render={<Link to="/" />}
+                title="Back to dashboard"
+              >
+                <ArrowLeftIcon data-icon="inline-start" />
+                Dashboard
+              </Button>
+              <Separator orientation="vertical" className="mx-1 h-4" />
+              <span className="truncate text-sm text-muted-foreground">
+                {site.name} / {page.title}
+              </span>
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-    </div>
+
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    saveState === "error" && "bg-destructive",
+                    saveState === "saving" && "animate-pulse bg-primary",
+                    (saveState === "dirty" || saveState === "saved") && "bg-muted-foreground/50",
+                  )}
+                  aria-hidden
+                />
+                {SAVE_LABEL[saveState]}
+              </span>
+              <div className="flex items-center rounded-lg border">
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Undo"
+                  title="Undo (Ctrl+Z)"
+                  disabled={!canUndo()}
+                  onClick={() => undoEdit()}
+                >
+                  <Undo2Icon />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Redo"
+                  title="Redo (Ctrl+Shift+Z)"
+                  disabled={!canRedo()}
+                  onClick={() => redoEdit()}
+                >
+                  <Redo2Icon />
+                </Button>
+              </div>
+              <div className="flex items-center rounded-lg border" role="group" aria-label="Preview width">
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Desktop width"
+                  aria-pressed={breakpoint === "desktop"}
+                  className={cn(breakpoint === "desktop" && "bg-accent")}
+                  onClick={() => setBreakpoint("desktop")}
+                >
+                  <MonitorIcon />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Mobile width"
+                  aria-pressed={breakpoint === "mobile"}
+                  className={cn(breakpoint === "mobile" && "bg-accent")}
+                  onClick={() => setBreakpoint("mobile")}
+                >
+                  <SmartphoneIcon />
+                </Button>
+              </div>
+              <Badge variant="secondary" className="hidden lg:inline-flex">
+                Draft
+              </Badge>
+              {agentStreaming && <Badge className="animate-pulse">Agent editing…</Badge>}
+              <Button
+                variant="outline"
+                size="sm"
+                aria-pressed={rightTab === "chat"}
+                onClick={() => setRightTab((current) => (current === "chat" ? "selection" : "chat"))}
+                title="Show the agent chat panel"
+              >
+                <MessageSquareIcon data-icon="inline-start" />
+                Chat
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={<Link to={`/sites/${siteId}/preview`} />}
+                title="Open the full-page preview"
+              >
+                Preview
+              </Button>
+            </div>
+          </header>
+
+          <DndContext
+            sensors={sensors}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragCancel={() => setDragLabel(null)}
+          >
+            <div className="flex min-h-0 flex-1">
+              <Canvas site={site} onAddAt={(index) => setPalette({ open: true, index })} />
+              <RightDock
+                site={site}
+                page={page}
+                tab={rightTab}
+                onTabChange={setRightTab}
+                onSaved={() => void reloadPages()}
+                selection={
+                  selectedId !== null && tree !== null && selectedId !== tree.id
+                    ? { page: page.id, node: selectedId }
+                    : null
+                }
+                selectionNodeLabel={selectionLabel}
+              />
+            </div>
+            <DragOverlay>
+              {dragLabel !== null ? (
+                <div className="rounded-lg border bg-background px-3 py-1.5 text-sm font-medium shadow-md">
+                  {dragLabel}
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+
+          <AddBlockDialog
+            open={palette.open}
+            index={palette.index}
+            onOpenChange={(open) => setPalette((current) => ({ ...current, open }))}
+          />
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   )
 }
 
-function CATALOG_NAME(component: string): string | null {
-  return CATALOG.find((entry) => entry.name === component)?.display_name ?? null
+function catalogName(component: string): string {
+  return CATALOG.find((entry) => entry.name === component)?.display_name ?? component
 }

@@ -6,7 +6,7 @@ import {
   type Control,
   type UseFormRegister,
 } from "react-hook-form"
-import { ChevronRightIcon, Trash2Icon } from "lucide-react"
+import { Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -25,13 +25,12 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { updatePage, type PageSettingsPatch } from "@/lib/editor"
 import type { PageResource, SiteResource } from "@/lib/sites"
-import { cn } from "@/lib/utils"
 import { findTreeNode, useEditorStore } from "@/stores/editor"
 
 /**
- * Inspector (Phase 4 tasks 6–7): layers outline + schema-driven prop forms
- * (D4.1 — inspector-only editing) + page settings with SEO fields.
- * Copy targets a non-technical founder (D4.3).
+ * Inspector (Phase 4 tasks 6–7): schema-driven prop forms (D4.1 —
+ * inspector-only editing) + page settings with SEO fields. Layers live in
+ * the editor sidebar now. Copy targets a non-technical founder (D4.3).
  */
 
 // --- registry schema narrowing ---------------------------------------------
@@ -65,10 +64,6 @@ function labelFor(key: string): string {
     .split("_")
     .map((w) => (w === "cta" ? "CTA" : w === "url" ? "URL" : w === "seo" ? "SEO" : w.charAt(0).toUpperCase() + w.slice(1)))
     .join(" ")
-}
-
-function displayName(component: string): string {
-  return CATALOG.find((entry) => entry.name === component)?.display_name ?? component
 }
 
 // --- prop cleaning (form values → registry-valid props) ----------------------
@@ -294,52 +289,6 @@ function ControlledEnum({
         />
       )}
     />
-  )
-}
-
-// --- layers ------------------------------------------------------------------
-
-function LayerRow({ node, depth }: { node: ComponentInstance; depth: number }) {
-  const selectedId = useEditorStore((s) => s.selectedId)
-  const select = useEditorStore((s) => s.select)
-  const selected = selectedId === node.id
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          select(node.id)
-        }}
-        style={{ paddingLeft: 8 + depth * 14 }}
-        className={cn(
-          "flex w-full cursor-pointer items-center gap-1 rounded-md py-1 pr-2 text-left text-sm outline-none select-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50",
-          selected && "bg-accent font-medium",
-        )}
-      >
-        <ChevronRightIcon
-          className={cn("size-3 shrink-0 text-muted-foreground", node.children.length > 0 && "rotate-90")}
-        />
-        {displayName(node.component)}
-      </button>
-      {node.children.map((child) => (
-        <LayerRow key={child.id} node={child} depth={depth + 1} />
-      ))}
-    </>
-  )
-}
-
-function LayersPanel() {
-  const tree = useEditorStore((s) => s.tree)
-  if (tree === null) return null
-  return (
-    <div className="border-b p-3" aria-label="Layers">
-      <p className="mb-1.5 px-1 text-sm font-medium text-muted-foreground">Layers</p>
-      <div className="flex flex-col">
-        <LayerRow node={tree} depth={0} />
-      </div>
-    </div>
   )
 }
 
@@ -586,9 +535,9 @@ function PageSettingsForm({
   )
 }
 
-// --- inspector shell ---------------------------------------------------------
+// --- inspector panel ---------------------------------------------------------
 
-export function Inspector({
+export function InspectorPanel({
   site,
   page,
   onSaved,
@@ -604,15 +553,12 @@ export function Inspector({
   const isRoot = node !== null && tree !== null && node.id === tree.id
 
   return (
-    <aside className="flex w-80 shrink-0 flex-col border-l" aria-label="Inspector">
-      <LayersPanel />
-      <div className="flex-1 overflow-y-auto p-3">
-        {node !== null && !isRoot ? (
-          <SchemaForm node={node} />
-        ) : (
-          <PageSettingsForm site={site} page={page} onSaved={onSaved} />
-        )}
-      </div>
-    </aside>
+    <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      {node !== null && !isRoot ? (
+        <SchemaForm node={node} />
+      ) : (
+        <PageSettingsForm site={site} page={page} onSaved={onSaved} />
+      )}
+    </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router"
-import { ArrowUpRightIcon, PlusIcon, XIcon } from "lucide-react"
+import { ArrowUpRightIcon, PlusIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import type { MessageSelection } from "@/lib/agent"
@@ -20,22 +20,21 @@ import { EmptyState } from "@/components/chat/EmptyState"
 import { MessageList } from "@/components/chat/MessageList"
 
 /**
- * Chat docked into the editor (Phase 6): the same store and primitives as
- * the full-screen chat. The focused page follows the editor's current page,
- * and the current selection rides along in every message (D6.1).
+ * Chat tab of the editor's right dock (Phase 6): the same store and
+ * primitives as the full-screen chat. The focused page follows the
+ * editor's current page, and the current selection rides along in every
+ * message (D6.1).
  */
-export function ChatDock({
+export function ChatPanel({
   site,
   page,
   selection,
   selectionNodeLabel,
-  onClose,
 }: {
   site: SiteResource
   page: PageResource
   selection: MessageSelection | null
   selectionNodeLabel: string | null
-  onClose: () => void
 }) {
   const navigate = useNavigate()
   const {
@@ -63,8 +62,8 @@ export function ChatDock({
   const empty = activeSessionId === null || messages.length === 0
 
   return (
-    <aside className="flex w-[380px] shrink-0 flex-col border-l" aria-label="Agent chat">
-      <header className="flex items-center gap-1.5 border-b px-3 py-2">
+    <div className="flex min-h-0 flex-1 flex-col" aria-label="Agent chat">
+      <header className="flex shrink-0 items-center gap-1.5 border-b px-3 py-2">
         <Select value={activeSessionId} onValueChange={(v) => void selectSession(v as string)}>
           <SelectTrigger size="sm" className="min-w-0 flex-1" aria-label="Chat session">
             <SelectValue placeholder="New chat" />
@@ -102,9 +101,6 @@ export function ChatDock({
         >
           <ArrowUpRightIcon />
         </Button>
-        <Button variant="ghost" size="icon-xs" aria-label="Close chat panel" onClick={onClose}>
-          <XIcon />
-        </Button>
       </header>
 
       {empty ? <EmptyState siteId={site.id} /> : <MessageList />}
@@ -115,6 +111,6 @@ export function ChatDock({
         selectionNodeLabel={selectionNodeLabel}
         onClearSelection={() => useEditorStore.getState().select(null)}
       />
-    </aside>
+    </div>
   )
 }
