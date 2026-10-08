@@ -71,14 +71,53 @@ export async function getPageTree(
   return api<TreeEnvelope>(`/api/v1/sites/${siteId}/pages/${pageId}/tree/`)
 }
 
-export async function patchTree(
+export interface BranchResource {
+  id: string
+  site: string
+  name: string
+  tag: string
+  status: "queued" | "publishing" | "published" | "failed"
+  target: "platform" | "zip"
+  result_url: string
+  error_log: string
+  created_at: string
+  published_at: string | null
+}
+
+export async function publishSite(
   siteId: string,
-  pageId: string,
-  operations: unknown,
-): Promise<TreeEnvelope> {
-  return api<TreeEnvelope>(
-    `/api/v1/sites/${siteId}/pages/${pageId}/tree/patch/`,
-    { method: "POST", body: JSON.stringify({ operations }) },
+  input: { name: string; tag?: string; target?: "platform" | "zip" },
+): Promise<BranchResource> {
+  return api<BranchResource>(`/api/v1/sites/${siteId}/publish/`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  })
+}
+
+export async function listBranches(siteId: string): Promise<BranchResource[]> {
+  const page = await api<Paginated<BranchResource>>(
+    `/api/v1/sites/${siteId}/publish/branches/`,
+  )
+  return page.results
+}
+
+export async function rollbackBranch(
+  siteId: string,
+  branchId: string,
+): Promise<BranchResource> {
+  return api<BranchResource>(
+    `/api/v1/sites/${siteId}/publish/branches/${branchId}/rollback/`,
+    { method: "POST" },
+  )
+}
+
+export async function mergeBranch(
+  siteId: string,
+  branchId: string,
+): Promise<BranchResource> {
+  return api<BranchResource>(
+    `/api/v1/sites/${siteId}/publish/branches/${branchId}/merge/`,
+    { method: "POST" },
   )
 }
 

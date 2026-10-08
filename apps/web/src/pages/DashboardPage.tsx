@@ -9,6 +9,7 @@ import {
   PencilIcon,
   PlusIcon,
   SparklesIcon,
+  ZapIcon,
   SettingsIcon,
   Trash2Icon,
 } from "lucide-react"
@@ -29,6 +30,7 @@ import {
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CreateSiteDialog, DeleteSiteDialog, RenameSiteDialog } from "@/components/site-dialogs"
+import { PublishModal } from "@/components/PublishModal"
 
 function relativeTime(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -54,6 +56,7 @@ function SiteCard({ site }: { site: SiteResource }) {
   const { rename, remove, busy } = useSiteMutations()
   const [renaming, setRenaming] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [publishing, setPublishing] = useState(false)
 
   return (
     <Card className="group relative overflow-hidden py-0 transition-all hover:shadow-md hover:ring-ring/40 focus-within:ring-ring/40">
@@ -116,6 +119,10 @@ function SiteCard({ site }: { site: SiteResource }) {
               <SettingsIcon /> Theme settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setPublishing(true)}>
+              <ZapIcon /> Publish
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setRenaming(true)}>
               <PencilIcon /> Rename
             </DropdownMenuItem>
@@ -143,7 +150,8 @@ function SiteCard({ site }: { site: SiteResource }) {
         }}
         busy={busy}
       />
-    </Card>
+      <PublishModal siteId={site.id} open={publishing} onOpenChange={setPublishing} />
+    </CardContent>
   )
 }
 
