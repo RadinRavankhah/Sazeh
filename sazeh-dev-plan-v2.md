@@ -642,24 +642,14 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 
 ### Phase 7 — Publishing Pipeline (Weeks 10–12)
 
-**Goal:** Sites go live on the internet. Carries over v1 §11/§19/§20 essentially intact.
-
-**Tasks**
-1. `PublishJob` + Celery pipeline: render → write static bundle → upload → status updates.
-2. Platform hosting path: shell HTML + `_site.json` + `_manifest.json` (v1 §20), S3/CDN serving at the D7.1 subdomain scheme; workspace/site slug routing.
-3. ZIP export path: bundle + README, pre-signed URL download.
-4. GitHub path: OAuth connect, encrypted token storage, `GitHubTreePublisher` (v1 §19).
-5. SPA: publish modal (target picker), job progress polling, result link, publish history table.
-6. Republish-diff behavior: republishing overwrites the bundle; old versions retained? (D7.3).
-
-**Exit criteria:** A real site built in the editor is reachable on its public subdomain; ZIP downloads and opens; a GitHub repo receives a clean single commit.
+**Goal:** Sites go live on the internet. Carries over v1 §11/§19/§20 essentially intact, adapted per D7 decisions.
 
 **Decisions**
 
 > **[DECISION NEEDED] D7.1 — Published-site URL scheme.**
 > V1 locked `{tenant}-{site}.platform.app`. Confirm, or prefer `{site}.{tenant}.platform.app`, or single-tenant-style `{site}.platform.app` with global uniqueness (simpler DNS, but name-squatting issues).
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** `{site}.platform.app` — single-tenant style, global uniqueness (see `D7-SEO-PUBLISHING.md`).
 
 > **[DECISION NEEDED] D7.2 — SEO posture at launch (important).**
 > V1 accepted client-side-rendered output (bad SEO) for MVP. For a site builder this is a product weakness competitors will exploit.
@@ -667,12 +657,25 @@ Estimates assume one developer working with AI-assisted tooling; they are planni
 > (b) SSG-lite at launch: pre-render each page's static HTML from the tree at publish time (needs a Node render worker — scope/time cost)
 > (c) Hybrid: pre-render critical pages (home, landing) only.
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** (a) CSR at launch → (c) SSG fast-follow after crawl audit (see `D7-SEO-PUBLISHING.md`).
 
-> **[DECISION NEEDED] D7.3 — Publish retention.**
+> **[DECISION NEEDED] D7.3 — Publish retention & branching.**
 > Keep previous publish bundles for rollback (storage cost, better UX) or overwrite-only?
 >
-> **[YOUR ANSWER]:** _(pending)_
+> **[YOUR ANSWER]:** Figma-style DB-level branches (named snapshots, not real Git) + keep N=5 branches + tags + encrypted secrets + rollback + CDN invalidation (MVP); real Git/PR/diff/view post-MVP (see `D7-SEO-PUBLISHING.md`).
+
+**Tasks**
+1. `PublishBranch` model + migration: site FK, name, tag, status (queued/publishing/published/failed), target (platform/ZIP/other), result_url, error_log, branch_snapshot JSON, secrets snapshot, created_by.
+2. Shell HTML exporter (CSR per D7.2): `_site.json` (full tree) + `_manifest.json` (page list + site config) + shell HTML that fetches `_site.json`.
+3. VPS + nginx static serving + Cloudflare CDN (no AWS): bundles uploaded to VPS under `{site_slug}/`; `*.platform.app` → Cloudflare → VPS.
+4. `publish_site` task (sync for MVP; Celery when Redis up): build bundle → upload → update branch status; retries ×3.
+5. REST endpoints: `POST /sites/{id}/publish/`, `GET /sites/{id}/publish/branches/`, `POST /sites/{id}/publish/{id}/rollback/`, `POST /sites/{id}/publish/{id}/merge/`.
+6. Figma-style branch UI: create/switch/merge/revert branches; branch list per site.
+7. N=5 branch retention + cleanup task.
+8. ZIP export: bundle + README, pre-signed URL.
+9. Frontend: publish modal (name your branch, target picker), progress polling, branch list/switch/merge/revert UI.
+
+**Exit criteria:** A real site built in the editor is reachable on its public subdomain; ZIP downloads and opens; branch switch/rollback works.
 
 ---
 
